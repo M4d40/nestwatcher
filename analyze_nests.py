@@ -6,6 +6,7 @@ Original Creator racinel200 and abakedapplepie
 Refactored by M4d40
 """
 
+import argparse
 import json
 import time
 
@@ -14,56 +15,18 @@ import requests
 from shapely import geometry
 from mysql import connector
 
+# Python2 and Python3 compatibility
+try:
+    from ConfigParser import ConfigParser
+except ImportError:
+    from configparser import ConfigParser
 try:
     from urllib import quote
 except ImportError:
     from urllib.parse import quote
 
 
-####################
-### Config Start ###
-####################
-
-TIMESPAN_SINCE_CHANGE = 24  # Timespan in hours
-MIN_POKEMON_NEST_COUNT = 10  # Min amount a poke must be spawned in nest area
-DELETE_OLD_NESTS = True  # Delete old Nests from db, before inserting new ones
-
-
-# Area #
-########
-# point1 -> lower left point
-POINT1_LAT = "0.360852"
-POINT1_LON = "0.925244"
-
-# point 2 -> upper right point
-POINT2_LAT = "0.446112"
-POINT2_LON = "0.061136"
-
-
-# DB Config #
-#############
-# READ DB
-DB_R_HOST = "0.0.0.0"
-DB_R_NAME = "rdm"
-DB_R_USER = "dbuser"
-DB_R_PASS = "dbpass"
-DB_R_PORT = 3306
-DB_R_TABLE_POKEMON = "pokemon"
-DB_R_TABLE_POKESTOP = "pokestop"
-DB_R_SPAWNPOINT = "spawnpoint"
-
-# WRITE DB
-DB_W_HOST = "0.0.0.0"
-DB_W_NAME = "rdm"
-DB_W_USER = "dbuser"
-DB_W_PASS = "dbpass"
-DB_W_PORT = 3306
-DB_W_TABLE_NESTS = "nests"
-
-
-##################
-### Config End ###
-##################
+DEFAULT_CONFIG = "default.ini"
 
 ### Overpass api data
 OSM_API = "https://overpass-api.de/api/interpreter"
@@ -91,12 +54,6 @@ way["natural"="scrub"];
 
 
 # Show configs
-print("\nFollowing Configs will be used:")
-print("-"*15)
-print("{} hours will be used as timespan".format(TIMESPAN_SINCE_CHANGE))
-print("Minimum amount of pokes to count as Nest: {}".format(MIN_POKEMON_NEST_COUNT))
-print("Delete Old Nests from DB: {}".format(str(DELETE_OLD_NESTS)))
-print("~"*15)
 
 #nest_json = dict()
 all_pokestops = dict()
@@ -162,6 +119,118 @@ ON DUPLICATE KEY UPDATE
 """
 
 
+def create_config(config_path):
+    config = dict()
+    config_raw = ConfigParser()
+    config_raw.read(DEFAULT_CONFIG)
+    config_raw.read(config_path)
+    config['timespan'] = config_raw.getint(
+        'Nest Config',
+        'TIMESPAN_SINCE_CHANGE')
+    config['min_pokemon'] = config_raw.getint(
+        'Nest Config',
+        'MIN_POKEMON_NEST_COUNT')
+    config['delete_old'] = config_raw.getboolean(
+        'Nest Config',
+        'DELETE_OLD_NESTS')
+    config['event_poke'] = json.loads(config_raw.get(
+        'Nest Config',
+        'EVENT_POKEMON'))
+    config['p1_lat'] = config_raw.getfloat(
+        'Area',
+        'POINT1_LAT')
+    config['p1_lon'] = config_raw.getfloat(
+        'Area',
+        'POINT1_LON')
+    config['p2_lat'] = config_raw.getfloat(
+        'Area',
+        'POINT2_LAT')
+    config['p2_lon'] = config_raw.getfloat(
+        'Area',
+        'POINT2_LON')
+    config['db_r_host'] = config_raw.get(
+        'DB Read',
+        'HOST')
+    config['db_r_name'] = config_raw.get(
+        'DB Read',
+        'NAME')
+    config['db_r_user'] = config_raw.get(
+        'DB Read',
+        'USER')
+    config['db_r_pass'] = config_raw.get(
+        'DB Read',
+        'PASSWORD')
+    config['db_r_port'] = config_raw.getint(
+        'DB Read',
+        'PORT')
+    config['db_pokemon'] = config_raw.get(
+        'DB Read',
+        'TABLE_POKEMON')
+    config['db_pokestop'] = config_raw.get(
+        'DB Read',
+        'TABLE_POKESTOP')
+    config['db_spawnpoint'] = config_raw.get(
+        'DB Read',
+        'TABLE_SPAWNPOINT')
+    config['db_w_host'] = config_raw.get(
+        'DB Write',
+        'HOST')
+    config['db_w_name'] = config_raw.get(
+        'DB Write',
+        'NAME')
+    config['db_w_user'] = config_raw.get(
+        'DB Write',
+        'USER')
+    config['db_w_pass'] = config_raw.get(
+        'DB Write',
+        'PASSWORD')
+    config['db_w_port'] = config_raw.getint(
+        'DB Write',
+        'PORT')
+    config['db_nest'] = config_raw.get(
+        'DB Write',
+        'TABLE_NESTS')
+    config['verbose'] = config_raw.getboolean(
+        'Other',
+        'VERBOSE')
+
+    return config
+
+
+def print_configs(config):
+    """Print the used config."""
+    print("\nFollowing Configs will be used:")
+    print("-"*15)
+    print("{} hours will be used as timespan".format(config['timespan']))
+    print("Minimum amount of pokes to count as Nest: {}".format(config['min_pokemon']))
+    print("Ignore Event Pokemon: {}".format(str(config['event_poke'])))
+    print("Delete Old Nests from DB: {}".format(str(config['delete_old'])))
+    if config['verbose']:
+        print("-"*15)
+        print("\nVerbose Config:")
+        print("Point 1: {lat}, {lon}".format(
+            lat=config['p1_lat'],
+            lon=config['p1_lon']))
+        print("Point 2: {lat}, {lon}".format(
+            lat=config['p2_lat'],
+            lon=config['p2_lon']))
+        print("")
+        print("DB Read:")
+        print("Host: {}".format(config['db_r_host']))
+        print("Name: {}".format(config['db_r_name']))
+        print("User: {}".format(config['db_r_user']))
+        print("Password: {}".format(config['db_r_pass']))
+        print("Port: {}".format(config['db_r_port']))
+        print("")
+        print("DB Read:")
+        print("Host: {}".format(config['db_w_host']))
+        print("Name: {}".format(config['db_w_name']))
+        print("User: {}".format(config['db_w_user']))
+        print("Password: {}".format(config['db_w_pass']))
+        print("Port: {}".format(config['db_w_port']))
+    print("~"*15)
+
+
 def osm_uri(p1_lat, p1_lon, p2_lat, p2_lon):
     """Generate the OSM uri for the OSM data"""
     osm_bbox = "[bbox:{p1_lat},{p1_lon},{p2_lat},{p2_lon}]".format(
@@ -179,9 +248,15 @@ def osm_uri(p1_lat, p1_lon, p2_lat, p2_lon):
     uri = OSM_API + osm_data + quote(osm_type + osm_bbox + date + osm_tag_data + osm_end)
     return uri
 
-def analyze_nest_data():
 
-    nest_url = osm_uri(POINT1_LAT, POINT1_LON, POINT2_LAT, POINT2_LON)
+def analyze_nest_data(config):
+
+    nest_url = osm_uri(
+        config['p1_lat'],
+        config['p1_lon'],
+        config['p2_lat'],
+        config['p2_lon']
+    )
     print("Overpass url:")
     print(nest_url)
     osm_session = requests.Session()
@@ -229,35 +304,35 @@ def analyze_nest_data():
         NestObjectJson[n2]['CenterLat'] = str(centerp.x)
         NestObjectJson[n2]['CenterLon'] = str(centerp.y)
     mydb_r = connector.connect(
-        host=DB_R_HOST,
-        user=DB_R_USER,
-        passwd=DB_R_PASS,
-        database=DB_R_NAME,
-        port=DB_R_PORT)
+        host=config['db_r_host'],
+        user=config['db_r_user'],
+        passwd=config['db_r_pass'],
+        database=config['db_r_name'],
+        port=config['db_r_port'])
     mydb_w = connector.connect(
-        host=DB_W_HOST,
-        user=DB_W_USER,
-        passwd=DB_W_PASS,
-        database=DB_W_NAME,
-        port=DB_W_PORT)
+        host=config['db_w_host'],
+        user=config['db_w_user'],
+        passwd=config['db_w_pass'],
+        database=config['db_w_name'],
+        port=config['db_w_port'])
 
     mycursor_r = mydb_r.cursor()
     mycursor_w = mydb_w.cursor()
 
     # Delete old Nest data
-    if DELETE_OLD_NESTS:
+    if config['delete_old']:
         mycursor_w.execute(
             NEST_DELETE_QUERY.format(
-                db_name=DB_W_NAME,
-                db_nests=DB_W_TABLE_NESTS
+                db_name=config['db_w_name'],
+                db_nests=config['db_nest']
             )
         )
 
     # Get all Pokestops with id, lat and lon
     mycursor_r.execute(
         POKESTOP_SELECT_QUERY.format(
-            db_name=DB_R_NAME,
-            db_pokestop=DB_R_TABLE_POKESTOP
+            db_name=config['db_r_name'],
+            db_pokestop=config['db_pokestop']
         )
     )
     myresult_pokestops = mycursor_r.fetchall()
@@ -265,8 +340,8 @@ def analyze_nest_data():
     # Get all Spawnpoints with id, lat and lon
     mycursor_r.execute(
         SPAWNPOINT_SELECT_QUERY.format(
-            db_name=DB_R_NAME,
-            db_spawnpoint=DB_R_SPAWNPOINT
+            db_name=config['db_r_name'],
+            db_spawnpoint=config['db_spawnpoint']
         )
     )
     myresultSpawnPoints = mycursor_r.fetchall()
@@ -293,7 +368,8 @@ def analyze_nest_data():
 
     nest_mons = ""
     if len(NEST_SPECIES_LIST) > 0:
-        for i in NEST_SPECIES_LIST:
+        filtered_species = set(NEST_SPECIES_LIST) - set(config['event_poke'])
+        for i in filtered_species:
             if nest_mons == "":
                 nest_mons = "'"+ str(i) +"'"
             else:
@@ -327,11 +403,11 @@ def analyze_nest_data():
         #print(nest_mons)
 
         # Use data since last change:
-        reset_time = int(time.time()) - (TIMESPAN_SINCE_CHANGE*3600)
+        reset_time = int(time.time()) - (config['timespan']*3600)
 
         query = NEST_SELECT_QUERY.format(
-            db_name=DB_R_NAME,
-            db_pokemon_table=DB_R_TABLE_POKEMON,
+            db_name=config['db_r_name'],
+            db_pokemon_table=config['db_pokemon'],
             pokestop_in=pokestop_in,
             spawnpoint_in=spawnpoint_in,
             nest_mons=nest_mons,
@@ -350,12 +426,12 @@ def analyze_nest_data():
 
     for x in NestObjectJson:
         if len(NestObjectJson[x]['PokemonSpawns']) > 2:
-            if NestObjectJson[x]['PokemonSpawns'][0][1] >= MIN_POKEMON_NEST_COUNT:
+            if NestObjectJson[x]['PokemonSpawns'][0][1] >= config['min_pokemon']:
                 print("Found Probable Nest")
                 # Insert Nest data to db
                 sql = NEST_INSERT_QUERY.format(
-                    db_name=DB_W_NAME,
-                    db_nests=DB_W_TABLE_NESTS,
+                    db_name=config['db_w_name'],
+                    db_nests=config['db_nest'],
                     nest_id=str(NestObjectJson[x]['id']),
                     center_lat=str(NestObjectJson[x]['CenterLat']),
                     center_lon=str(NestObjectJson[x]['CenterLon']),
@@ -382,5 +458,11 @@ def analyze_nest_data():
 
 
 if __name__ == "__main__":
-
-    analyze_nest_data()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-c", "--config", default="default.ini",
+        help="Config file to use")
+    args = parser.parse_args()
+    config_path = args.config
+    config = create_config(config_path)
+    print_configs(config)
+    analyze_nest_data(config)
