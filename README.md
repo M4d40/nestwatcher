@@ -1,6 +1,8 @@
 # PMSFnestScript
 Script to analyze scanned Data from Scanner Projects (like RDM or MAD) in combination with Data from OSM (Open Street Map)
 
+Edit and rename the `default.ini.example` to `default.ini`
+
 If you want to use your own config, start it with the config argument:
 
 ```python analyze_nests.py -c myconfig.ini```
