@@ -88,8 +88,20 @@ NEST_SPECIES_LIST = (
 # SQL Queries #
 ###############
 
-POKESTOP_SELECT_QUERY = "SELECT id, lat, lon FROM {db_name}.{db_pokestop}"
-SPAWNPOINT_SELECT_QUERY = "SELECT id, lat, lon FROM {db_name}.{db_spawnpoint}"
+POKESTOP_SELECT_QUERY = """SELECT id, lat, lon FROM {db_name}.{db_pokestop}
+WHERE (
+    lat >= {min_lat} AND lat <= {max_lat}
+  AND
+    lon >= {min_lon} AND lon <= {max_lon}
+)
+"""
+SPAWNPOINT_SELECT_QUERY = """SELECT id, lat, lon FROM {db_name}.{db_spawnpoint}
+WHERE (
+    lat >= {min_lat} AND lat <= {max_lat}
+  AND
+    lon >= {min_lon} AND lon <= {max_lon}
+)
+"""
 NEST_SELECT_QUERY = """SELECT pokemon_id, COUNT(pokemon_id) AS count
 FROM {db_name}.{db_pokemon_table}
 WHERE (
@@ -190,9 +202,13 @@ def create_config(config_path):
     config['db_nest'] = config_raw.get(
         'DB Write',
         'TABLE_NESTS')
+    config['save_path'] = config_raw.get(
+        'Other',
+        'SAVE_PATH')
     config['verbose'] = config_raw.getboolean(
         'Other',
         'VERBOSE')
+
 
     return config
 
@@ -205,6 +221,7 @@ def print_configs(config):
     print("Minimum amount of pokes to count as Nest: {}".format(config['min_pokemon']))
     print("Ignore Event Pokemon: {}".format(str(config['event_poke'])))
     print("Delete Old Nests from DB: {}".format(str(config['delete_old'])))
+    print("File will be saved in: {}".format(str(config['save_path'])))
     if config['verbose']:
         print("-"*15)
         print("\nVerbose Config:")
@@ -332,7 +349,11 @@ def analyze_nest_data(config):
     mycursor_r.execute(
         POKESTOP_SELECT_QUERY.format(
             db_name=config['db_r_name'],
-            db_pokestop=config['db_pokestop']
+            db_pokestop=config['db_pokestop'],
+            min_lat=config['p1_lat'],
+            max_lat=config['p2_lat'],
+            min_lon=config['p1_lon'],
+            max_lon=config['p2_lon']
         )
     )
     myresult_pokestops = mycursor_r.fetchall()
@@ -341,7 +362,11 @@ def analyze_nest_data(config):
     mycursor_r.execute(
         SPAWNPOINT_SELECT_QUERY.format(
             db_name=config['db_r_name'],
-            db_spawnpoint=config['db_spawnpoint']
+            db_spawnpoint=config['db_spawnpoint'],
+            min_lat=config['p1_lat'],
+            max_lat=config['p2_lat'],
+            min_lon=config['p1_lon'],
+            max_lon=config['p2_lon']
         )
     )
     myresultSpawnPoints = mycursor_r.fetchall()
@@ -437,7 +462,7 @@ def analyze_nest_data(config):
                     center_lon=str(NestObjectJson[x]['CenterLon']),
                     poke_id=str(NestObjectJson[x]['PokemonSpawns'][0][0]),
                     type_=0,
-                    poke_count=str(NestObjectJson[x]['PokemonSpawns'][0][1]),
+                    poke_count=(NestObjectJson[x]['PokemonSpawns'][0][1] / config['timespan']),
                     current_time=current_time
                 )
                 print(sql)
@@ -450,7 +475,7 @@ def analyze_nest_data(config):
 
 
 
-    f = open("NestObjectJson.json", "w")
+    f = open(config['save_path'], "w")
     f.write(str(NestObjectJson))
     f.close()
 
