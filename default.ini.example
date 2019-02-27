@@ -29,6 +29,13 @@ PASSWORD = dbpass
 PORT = 3306
 TABLE_NESTS = nests
 
-[Other]
+[Geojson]
 SAVE_PATH = nest.json
+STROKE = #352BFF,
+STROKE-WIDTH = 2,
+STROKE-OPACITY = 1,
+FILL =  #0651FF,
+FILL-OPACITY = 0.5
+
+[Other]
 VERBOSE = False

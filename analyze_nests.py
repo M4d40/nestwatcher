@@ -210,8 +210,23 @@ def create_config(config_path):
         'DB Write',
         'TABLE_NESTS')
     config['save_path'] = config_raw.get(
-        'Other',
+        'Geojson',
         'SAVE_PATH')
+    config['json-stroke'] = config_raw.get(
+        'Geojson',
+        'STROKE')
+    config['json-stroke-width'] = config_raw.getfloat(
+        'Geojson',
+        'STROKE-WIDTH')
+    config['json-stroke-opacity'] = config_raw.getfloat(
+        'Geojson',
+        'STROKE-OPACITY')
+    config['json-fill'] = config_raw.get(
+        'Geojson',
+        'FILL')
+    config['json-fill-opacity'] = config_raw.getfloat(
+        'Geojson',
+        'FILL-OPACITY')
     config['verbose'] = config_raw.getboolean(
         'Other',
         'VERBOSE')
@@ -328,7 +343,14 @@ def analyze_nest_data(config):
             (lon, lat)
         #n2_poly = Polygon(NestObjectJson[n2]['PolyPoints'])
         n2_poly = Polygon([list((lon,lat) for (lat, lon) in NestObjectJson[n2]['PolyPoints'])])
-        park_polys[n2] = Feature(geometry=n2_poly, id=n2)
+        n2_poly_props = {
+            "stroke": config["json-stroke"],
+            "stroke-width": config['json-stroke-width'],
+            "stroke-opacity": config['json-stroke-opacity'],
+            "fill": config['json-fill'],
+            "fill-opacity": config['json-fill-opacity']
+        }
+        park_polys[n2] = Feature(geometry=n2_poly, id=n2, properties=n2_poly_props)
         for node in NestObjectJson[n2]['nodes']:
             NestObjectJson[n2]['ShapelyPoly'] = geometry.MultiPoint(NestObjectJson[n2]['PolyPoints']).convex_hull
         centerp = NestObjectJson[n2]['ShapelyPoly'].centroid
