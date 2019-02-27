@@ -14,6 +14,13 @@ import requests
 
 from shapely import geometry
 from mysql import connector
+from geojson import (
+    dumps as geodumps,
+    dump as geodump,
+    Feature,
+    FeatureCollection,
+    Polygon
+)
 
 # Python2 and Python3 compatibility
 try:
@@ -290,6 +297,8 @@ def analyze_nest_data(config):
     NestObjectJson = dict()
     NodeObjectJson = dict()
     #print(response.text)
+    park_polys = dict()
+    nest_polys = list()
 
     for n in nest_json['elements']:
         if 'nodes' in n:
@@ -315,11 +324,17 @@ def analyze_nest_data(config):
             NestObjectJson[n2]['PolyPoints'].append(NodeObjectJson[node]['LatLon'])
 
     for n2 in NestObjectJson:
+        for (lat, lon) in NestObjectJson[n2]['PolyPoints']:
+            (lon, lat)
+        #n2_poly = Polygon(NestObjectJson[n2]['PolyPoints'])
+        n2_poly = Polygon([list((lon,lat) for (lat, lon) in NestObjectJson[n2]['PolyPoints'])])
+        park_polys[n2] = Feature(geometry=n2_poly, id=n2)
         for node in NestObjectJson[n2]['nodes']:
             NestObjectJson[n2]['ShapelyPoly'] = geometry.MultiPoint(NestObjectJson[n2]['PolyPoints']).convex_hull
         centerp = NestObjectJson[n2]['ShapelyPoly'].centroid
         NestObjectJson[n2]['CenterLat'] = str(centerp.x)
         NestObjectJson[n2]['CenterLon'] = str(centerp.y)
+    print("Connect/Start DB Session")
     mydb_r = connector.connect(
         host=config['db_r_host'],
         user=config['db_r_user'],
@@ -335,15 +350,17 @@ def analyze_nest_data(config):
 
     mycursor_r = mydb_r.cursor()
     mycursor_w = mydb_w.cursor()
-
+    print("Connection clear, start doing db stuff")
     # Delete old Nest data
     if config['delete_old']:
+        print("Delete Old Nests")
         mycursor_w.execute(
             NEST_DELETE_QUERY.format(
                 db_name=config['db_w_name'],
                 db_nests=config['db_nest']
             )
         )
+        print("Delete Old Nests - Complete")
 
     # Get all Pokestops with id, lat and lon
     mycursor_r.execute(
@@ -452,6 +469,7 @@ def analyze_nest_data(config):
     for x in NestObjectJson:
         if len(NestObjectJson[x]['PokemonSpawns']) > 2:
             if NestObjectJson[x]['PokemonSpawns'][0][1] >= config['min_pokemon']:
+                nest_polys.append(park_polys[NestObjectJson[x]['id']])
                 print("Found Probable Nest")
                 # Insert Nest data to db
                 sql = NEST_INSERT_QUERY.format(
@@ -475,9 +493,12 @@ def analyze_nest_data(config):
 
 
 
-    f = open(config['save_path'], "w")
-    f.write(str(NestObjectJson))
-    f.close()
+    #f = open(config['save_path'], "w")
+    #f.write(str(NestObjectJson))
+    #f.write(json.dumps(FeatureCollection(nest_polys), indent=4, sort_keys=True))
+    #f.close()
+    with open(config['save_path'], "w") as file_:
+        json.dump(FeatureCollection(nest_polys), file_, indent=4)
 
     #PrettyJson = json.dumps(NodeObjectJson, indent=4, sort_keys=False)
 

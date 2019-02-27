@@ -1,3 +1,4 @@
 requests
 shapely
 mysql-connector-python
+geojson
