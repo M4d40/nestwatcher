@@ -104,12 +104,24 @@ WHERE (
 """
 SPAWNPOINT_SELECT_QUERY = """SELECT id, lat, lon FROM {db_name}.{db_spawnpoint}
 WHERE (
-    lat >= {min_lat} AND lat <= {max_lat}
+    {lat} >= {min_lat} AND {lat} <= {max_lat}
   AND
-    lon >= {min_lon} AND lon <= {max_lon}
+    {lon} >= {min_lon} AND {lon} <= {max_lon}
 )
 """
 NEST_SELECT_QUERY = """SELECT pokemon_id, COUNT(pokemon_id) AS count
+FROM {db_name}.{db_pokemon_table}
+WHERE (
+    (
+        spawn_id in ({spawnpoint_in})
+    )
+    AND
+    pokemon_id in ({nest_mons})
+    AND
+    {pokemon_timestamp} >= {reset_time})
+GROUP BY pokemon_id
+ORDER BY count desc """
+NEST_SELECT_QUERY_STOP = """SELECT pokemon_id, COUNT(pokemon_id) AS count
 FROM {db_name}.{db_pokemon_table}
 WHERE (
     (
@@ -120,10 +132,9 @@ WHERE (
     AND
     pokemon_id in ({nest_mons})
     AND
-    first_seen_timestamp >= {reset_time})
+    {pokemon_timestamp} >= {reset_time})
 GROUP BY pokemon_id
 ORDER BY count desc """
-
 NEST_DELETE_QUERY = "DELETE FROM {db_name}.{db_nests}"
 NEST_INSERT_QUERY = """INSERT INTO {db_name}.{db_nests} (
     nest_id, lat, lon, pokemon_id, type, pokemon_count, updated)
@@ -155,6 +166,9 @@ def create_config(config_path):
     config['event_poke'] = json.loads(config_raw.get(
         'Nest Config',
         'EVENT_POKEMON'))
+    config['pokestop_pokemon'] = config_raw.getboolean(
+        'Nest Config',
+        'POKESTOP_POKEMON')
     config['p1_lat'] = config_raw.getfloat(
         'Area',
         'POINT1_LAT')
@@ -185,12 +199,21 @@ def create_config(config_path):
     config['db_pokemon'] = config_raw.get(
         'DB Read',
         'TABLE_POKEMON')
+    config['db_pokemon_timestamp'] = config_raw.get(
+        'DB Write',
+        'TABLE_POKEMON_TIMESTAMP')
     config['db_pokestop'] = config_raw.get(
         'DB Read',
         'TABLE_POKESTOP')
     config['db_spawnpoint'] = config_raw.get(
         'DB Read',
         'TABLE_SPAWNPOINT')
+    config['db_spawnpoint_lat'] = config_raw.get(
+        'DB Write',
+        'TABLE_SPAWNPOINT_LAT')
+    config['db_spawnpoint_lon'] = config_raw.get(
+        'DB Write',
+        'TABLE_SPAWNPOINT_LON')
     config['db_w_host'] = config_raw.get(
         'DB Write',
         'HOST')
@@ -402,6 +425,8 @@ def analyze_nest_data(config):
         SPAWNPOINT_SELECT_QUERY.format(
             db_name=config['db_r_name'],
             db_spawnpoint=config['db_spawnpoint'],
+            lat=config['db_spawnpoint_lat'],
+            lon=config['db_spawnpoint_lon'],
             min_lat=config['p1_lat'],
             max_lat=config['p2_lat'],
             min_lon=config['p1_lon'],
@@ -468,10 +493,15 @@ def analyze_nest_data(config):
 
         # Use data since last change:
         reset_time = int(time.time()) - (config['timespan']*3600)
-
-        query = NEST_SELECT_QUERY.format(
+        # RDM uses pokestop_ids, MAD not
+        if config['pokestop_pokemon']:
+            nest_query = NEST_SELECT_QUERY_STOP
+        else:
+            nest_query = NEST_SELECT_QUERY
+        query = nest_query.format(
             db_name=config['db_r_name'],
             db_pokemon_table=config['db_pokemon'],
+            pokemon_timestamp=config['db_pokemon_timestamp'],
             pokestop_in=pokestop_in,
             spawnpoint_in=spawnpoint_in,
             nest_mons=nest_mons,
