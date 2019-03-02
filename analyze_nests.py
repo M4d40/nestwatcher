@@ -407,18 +407,23 @@ def analyze_nest_data(config):
         )
         print("Delete Old Nests - Complete")
 
-    # Get all Pokestops with id, lat and lon
-    mycursor_r.execute(
-        POKESTOP_SELECT_QUERY.format(
-            db_name=config['db_r_name'],
-            db_pokestop=config['db_pokestop'],
-            min_lat=config['p1_lat'],
-            max_lat=config['p2_lat'],
-            min_lon=config['p1_lon'],
-            max_lon=config['p2_lon']
+    if config['pokestop_pokemon']:
+        # Get all Pokestops with id, lat and lon
+        mycursor_r.execute(
+            POKESTOP_SELECT_QUERY.format(
+                db_name=config['db_r_name'],
+                db_pokestop=config['db_pokestop'],
+                min_lat=config['p1_lat'],
+                max_lat=config['p2_lat'],
+                min_lon=config['p1_lon'],
+                max_lon=config['p2_lon']
+            )
         )
-    )
-    myresult_pokestops = mycursor_r.fetchall()
+        myresult_pokestops = mycursor_r.fetchall()
+
+        for pkstp in myresult_pokestops:
+            pkstpPoint = geometry.Point(pkstp[1], pkstp[2])
+            all_pokestops[pkstp[0]] = pkstpPoint
 
     # Get all Spawnpoints with id, lat and lon
     mycursor_r.execute(
@@ -435,11 +440,6 @@ def analyze_nest_data(config):
     )
     myresultSpawnPoints = mycursor_r.fetchall()
 
-
-    for pkstp in myresult_pokestops:
-        pkstpPoint = geometry.Point(pkstp[1], pkstp[2])
-        all_pokestops[pkstp[0]] = pkstpPoint
-
     for spwn in myresultSpawnPoints:
         spwnPoint = geometry.Point(spwn[1], spwn[2])
         all_spawn_points[spwn[0]] = spwnPoint
@@ -447,9 +447,10 @@ def analyze_nest_data(config):
 
     for nst in NestObjectJson:
         print("Getting spawn point and pokestop data for nest")
-        for pkstpKey, pkstp in all_pokestops.items():
-            if pkstp.within(NestObjectJson[nst]['ShapelyPoly']):
-                NestObjectJson[nst]['PokeStops'].append(pkstpKey)
+        if config['pokestop_pokemon']:
+            for pkstpKey, pkstp in all_pokestops.items():
+                if pkstp.within(NestObjectJson[nst]['ShapelyPoly']):
+                    NestObjectJson[nst]['PokeStops'].append(pkstpKey)
         for spwnKey, spwn in all_spawn_points.items():
             if spwn.within(NestObjectJson[nst]['ShapelyPoly']):
                 NestObjectJson[nst]['SpawnPoints'].append(spwnKey)
