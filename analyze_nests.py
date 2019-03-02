@@ -102,7 +102,7 @@ WHERE (
     lon >= {min_lon} AND lon <= {max_lon}
 )
 """
-SPAWNPOINT_SELECT_QUERY = """SELECT id, lat, lon FROM {db_name}.{db_spawnpoint}
+SPAWNPOINT_SELECT_QUERY = """SELECT {sp_id}, lat, lon FROM {db_name}.{db_spawnpoint}
 WHERE (
     {lat} >= {min_lat} AND {lat} <= {max_lat}
   AND
@@ -208,6 +208,9 @@ def create_config(config_path):
     config['db_spawnpoint'] = config_raw.get(
         'DB Read',
         'TABLE_SPAWNPOINT')
+    config['db_spawnpoint_id'] = config_raw.get(
+        'DB Read',
+        'TABLE_SPAWNPOINT_ID')
     config['db_spawnpoint_lat'] = config_raw.get(
         'DB Read',
         'TABLE_SPAWNPOINT_LAT')
@@ -430,6 +433,7 @@ def analyze_nest_data(config):
         SPAWNPOINT_SELECT_QUERY.format(
             db_name=config['db_r_name'],
             db_spawnpoint=config['db_spawnpoint'],
+            sp_id=config['db_spawnpoint_id'],
             lat=config['db_spawnpoint_lat'],
             lon=config['db_spawnpoint_lon'],
             min_lat=config['p1_lat'],
