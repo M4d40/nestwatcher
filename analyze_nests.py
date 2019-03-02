@@ -209,10 +209,10 @@ def create_config(config_path):
         'DB Read',
         'TABLE_SPAWNPOINT')
     config['db_spawnpoint_lat'] = config_raw.get(
-        'DB Write',
+        'DB Read',
         'TABLE_SPAWNPOINT_LAT')
     config['db_spawnpoint_lon'] = config_raw.get(
-        'DB Write',
+        'DB Read',
         'TABLE_SPAWNPOINT_LON')
     config['db_w_host'] = config_raw.get(
         'DB Write',
