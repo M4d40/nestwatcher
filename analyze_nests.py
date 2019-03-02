@@ -200,7 +200,7 @@ def create_config(config_path):
         'DB Read',
         'TABLE_POKEMON')
     config['db_pokemon_timestamp'] = config_raw.get(
-        'DB Write',
+        'DB Read',
         'TABLE_POKEMON_TIMESTAMP')
     config['db_pokestop'] = config_raw.get(
         'DB Read',
