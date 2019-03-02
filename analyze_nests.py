@@ -102,7 +102,7 @@ WHERE (
     lon >= {min_lon} AND lon <= {max_lon}
 )
 """
-SPAWNPOINT_SELECT_QUERY = """SELECT {sp_id}, lat, lon FROM {db_name}.{db_spawnpoint}
+SPAWNPOINT_SELECT_QUERY = """SELECT {sp_id}, {lat}, {lon} FROM {db_name}.{db_spawnpoint}
 WHERE (
     {lat} >= {min_lat} AND {lat} <= {max_lat}
   AND
