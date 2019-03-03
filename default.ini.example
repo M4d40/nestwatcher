@@ -19,6 +19,7 @@ USER = dbuser
 PASSWORD = dbpass
 PORT = 3306
 TABLE_POKEMON = pokemon
+TABLE_POKEMON_SPAWNID = spawn_id
 TABLE_POKEMON_TIMESTAMP = first_seen_timestamp
 TABLE_POKESTOP = pokestop
 TABLE_SPAWNPOINT = spawnpoint

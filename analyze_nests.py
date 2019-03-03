@@ -113,7 +113,7 @@ NEST_SELECT_QUERY = """SELECT pokemon_id, COUNT(pokemon_id) AS count
 FROM {db_name}.{db_pokemon_table}
 WHERE (
     (
-        spawn_id in ({spawnpoint_in})
+        {spawn_id} in ({spawnpoint_in})
     )
     AND
     pokemon_id in ({nest_mons})
@@ -127,7 +127,7 @@ WHERE (
     (
         pokestop_id IN ({pokestop_in})
         OR
-        spawn_id in ({spawnpoint_in})
+        {spawn_id} in ({spawnpoint_in})
     )
     AND
     pokemon_id in ({nest_mons})
@@ -199,6 +199,9 @@ def create_config(config_path):
     config['db_pokemon'] = config_raw.get(
         'DB Read',
         'TABLE_POKEMON')
+    config['db_pokemon_spawnid'] = config_raw.get(
+        'DB Read',
+        'TABLE_POKEMON_SPAWNID')
     config['db_pokemon_timestamp'] = config_raw.get(
         'DB Read',
         'TABLE_POKEMON_TIMESTAMP')
@@ -508,6 +511,7 @@ def analyze_nest_data(config):
             db_pokemon_table=config['db_pokemon'],
             pokemon_timestamp=config['db_pokemon_timestamp'],
             pokestop_in=pokestop_in,
+            spawn_id=config['db_pokemon_spawnid'],
             spawnpoint_in=spawnpoint_in,
             nest_mons=nest_mons,
             reset_time=str(reset_time)
