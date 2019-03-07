@@ -1,4 +1,4 @@
 requests
 shapely
-mysql-connector-python
+pymysql
 geojson
