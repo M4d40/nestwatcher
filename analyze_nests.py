@@ -107,10 +107,10 @@ NEST_SELECT_QUERY = """SELECT pokemon_id, COUNT(pokemon_id) AS count
 FROM {db_name}.{db_pokemon_table}
 WHERE (
     (
-        {spawn_id} in ({spawnpoint_in})
+        {spawn_id} IN ({spawnpoint_in})
     )
     AND
-    pokemon_id in ({nest_mons})
+    pokemon_id IN ({nest_mons})
     AND
     {pokemon_timestamp} >= {reset_time})
 GROUP BY pokemon_id
@@ -121,10 +121,10 @@ WHERE (
     (
         pokestop_id IN ({pokestop_in})
         OR
-        {spawn_id} in ({spawnpoint_in})
+        {spawn_id} IN ({spawnpoint_in})
     )
     AND
-    pokemon_id in ({nest_mons})
+    pokemon_id IN ({nest_mons})
     AND
     {pokemon_timestamp} >= {reset_time})
 GROUP BY pokemon_id
@@ -518,10 +518,7 @@ def analyze_nest_data(config):
                 len(area_spawnpoints) < config['min_spawn']):
             failed_nests["Park has not enough Spawnpoints, ignore it"] += 1
             continue
-        if area_spawnpoints:
-            spawnpoint_in = "'{}'".format("','".join(str(nr) for nr in area_spawnpoints))
-        else:
-            spawnpoint_in = ""
+        spawnpoint_in = "'{}'".format("','".join(str(nr) for nr in area_spawnpoints))
         pokestop_in = "'{}'".format("','".join(str(nr) for nr in area_pokestops))
         #print(spawnpoint_in)
         #print(pokestop_in)
