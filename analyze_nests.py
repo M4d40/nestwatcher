@@ -6,17 +6,19 @@ Original Creator racinel200 and abakedapplepie
 Refactored by M4d40
 """
 
+
+from collections import defaultdict
+
 import argparse
 import json
+import sys
 import time
 
 import requests
 
 from shapely import geometry
-from mysql import connector
+from pymysql import connect
 from geojson import (
-    dumps as geodumps,
-    dump as geodump,
     Feature,
     FeatureCollection,
     Polygon
@@ -59,14 +61,6 @@ way["natural"="scrub"];
 """
 
 
-
-# Show configs
-
-#nest_json = dict()
-all_pokestops = dict()
-all_spawn_points = dict()
-
-
 ### Nesting Species
 # Updated 2019.01.30
 NEST_G1 = [
@@ -102,43 +96,67 @@ WHERE (
     lon >= {min_lon} AND lon <= {max_lon}
 )
 """
-SPAWNPOINT_SELECT_QUERY = """SELECT id, lat, lon FROM {db_name}.{db_spawnpoint}
+SPAWNPOINT_SELECT_QUERY = """SELECT {sp_id}, {lat}, {lon} FROM {db_name}.{db_spawnpoint}
 WHERE (
-    lat >= {min_lat} AND lat <= {max_lat}
+    {lat} >= {min_lat} AND {lat} <= {max_lat}
   AND
-    lon >= {min_lon} AND lon <= {max_lon}
+    {lon} >= {min_lon} AND {lon} <= {max_lon}
 )
 """
 NEST_SELECT_QUERY = """SELECT pokemon_id, COUNT(pokemon_id) AS count
 FROM {db_name}.{db_pokemon_table}
 WHERE (
     (
-        pokestop_id IN ({pokestop_in})
-        OR
-        spawn_id in ({spawnpoint_in})
+        {spawn_id} IN ({spawnpoint_in})
     )
     AND
-    pokemon_id in ({nest_mons})
+    pokemon_id IN ({nest_mons})
     AND
-    first_seen_timestamp >= {reset_time})
+    {pokemon_timestamp} >= {reset_time})
 GROUP BY pokemon_id
 ORDER BY count desc """
-
+NEST_SELECT_QUERY_STOP = """SELECT pokemon_id, COUNT(pokemon_id) AS count
+FROM {db_name}.{db_pokemon_table}
+WHERE (
+    (
+        pokestop_id IN ({pokestop_in})
+        OR
+        {spawn_id} IN ({spawnpoint_in})
+    )
+    AND
+    pokemon_id IN ({nest_mons})
+    AND
+    {pokemon_timestamp} >= {reset_time})
+GROUP BY pokemon_id
+ORDER BY count desc """
 NEST_DELETE_QUERY = "DELETE FROM {db_name}.{db_nests}"
 NEST_INSERT_QUERY = """INSERT INTO {db_name}.{db_nests} (
-    nest_id, lat, lon, pokemon_id, type, pokemon_count, updated)
+    nest_id, name, lon, lat, pokemon_id, type, pokemon_count, pokemon_avg, updated)
 VALUES(
-    '{nest_id}','{center_lat}','{center_lon}',
-    '{poke_id}', {type_}, {poke_count}, {current_time})
+    %(nest_id)s, %(name)s, %(lat)s,%(lon)s,
+    %(pokemon_id)s, %(type)s, %(pokemon_count)s, %(pokemon_avg)s, %(current_time)s)
 ON DUPLICATE KEY UPDATE
-    pokemon_id = '{poke_id}',
-    type = {type_},
-    pokemon_count = {poke_count},
-    updated = '{current_time}'
+    pokemon_id = %(pokemon_id)s,
+    name = %(name)s,
+    type = %(type)s,
+    pokemon_count = %(pokemon_count)s,
+    pokemon_avg = %(pokemon_avg)s,
+    updated = %(current_time)s
 """
 
 
+def progress(count, total, status=''):
+    """ progress bar: https://gist.github.com/vladignatyev/06860ec2040cb497f0f3"""
+    bar_len = 60
+    filled_len = int(round(bar_len * count / float(total)))
+
+    percents = round(100.0 * count / float(total), 1)
+    pbar = '=' * filled_len + '-' * (bar_len - filled_len)
+    sys.stdout.write('[%s] %s%s ...%s\r' % (pbar, percents, '%', status))
+    sys.stdout.flush()
+
 def create_config(config_path):
+    """ Parse config. """
     config = dict()
     config_raw = ConfigParser()
     config_raw.read(DEFAULT_CONFIG)
@@ -149,12 +167,18 @@ def create_config(config_path):
     config['min_pokemon'] = config_raw.getint(
         'Nest Config',
         'MIN_POKEMON_NEST_COUNT')
+    config['min_spawn'] = config_raw.getint(
+        'Nest Config',
+        'MIN_SPAWNPOINT_NEST_COUNT')
     config['delete_old'] = config_raw.getboolean(
         'Nest Config',
         'DELETE_OLD_NESTS')
     config['event_poke'] = json.loads(config_raw.get(
         'Nest Config',
         'EVENT_POKEMON'))
+    config['pokestop_pokemon'] = config_raw.getboolean(
+        'Nest Config',
+        'POKESTOP_POKEMON')
     config['p1_lat'] = config_raw.getfloat(
         'Area',
         'POINT1_LAT')
@@ -182,15 +206,33 @@ def create_config(config_path):
     config['db_r_port'] = config_raw.getint(
         'DB Read',
         'PORT')
+    config['db_r_charset'] = config_raw.get(
+        'DB Read',
+        'CHARSET')
     config['db_pokemon'] = config_raw.get(
         'DB Read',
         'TABLE_POKEMON')
+    config['db_pokemon_spawnid'] = config_raw.get(
+        'DB Read',
+        'TABLE_POKEMON_SPAWNID')
+    config['db_pokemon_timestamp'] = config_raw.get(
+        'DB Read',
+        'TABLE_POKEMON_TIMESTAMP')
     config['db_pokestop'] = config_raw.get(
         'DB Read',
         'TABLE_POKESTOP')
     config['db_spawnpoint'] = config_raw.get(
         'DB Read',
         'TABLE_SPAWNPOINT')
+    config['db_spawnpoint_id'] = config_raw.get(
+        'DB Read',
+        'TABLE_SPAWNPOINT_ID')
+    config['db_spawnpoint_lat'] = config_raw.get(
+        'DB Read',
+        'TABLE_SPAWNPOINT_LAT')
+    config['db_spawnpoint_lon'] = config_raw.get(
+        'DB Read',
+        'TABLE_SPAWNPOINT_LON')
     config['db_w_host'] = config_raw.get(
         'DB Write',
         'HOST')
@@ -206,6 +248,9 @@ def create_config(config_path):
     config['db_w_port'] = config_raw.getint(
         'DB Write',
         'PORT')
+    config['db_w_charset'] = config_raw.get(
+        'DB Write',
+        'CHARSET')
     config['db_nest'] = config_raw.get(
         'DB Write',
         'TABLE_NESTS')
@@ -260,6 +305,7 @@ def print_configs(config):
         print("User: {}".format(config['db_r_user']))
         print("Password: {}".format(config['db_r_pass']))
         print("Port: {}".format(config['db_r_port']))
+        print("Charset: {}".format(config['db_r_charset']))
         print("")
         print("DB Read:")
         print("Host: {}".format(config['db_w_host']))
@@ -267,6 +313,7 @@ def print_configs(config):
         print("User: {}".format(config['db_w_user']))
         print("Password: {}".format(config['db_w_pass']))
         print("Port: {}".format(config['db_w_port']))
+        print("Charset: {}".format(config['db_w_charset']))
     print("~"*15)
 
 
@@ -289,7 +336,8 @@ def osm_uri(p1_lat, p1_lon, p2_lat, p2_lon):
 
 
 def analyze_nest_data(config):
-
+    """ Analyze nest data """
+    start_time = time.time()
     nest_url = osm_uri(
         config['p1_lat'],
         config['p1_lon'],
@@ -298,6 +346,7 @@ def analyze_nest_data(config):
     )
     print("Overpass url:")
     print(nest_url)
+    print("Getting OSM Data...")
     osm_session = requests.Session()
 
     response = osm_session.get(nest_url)
@@ -309,70 +358,55 @@ def analyze_nest_data(config):
         print(nest_json)
         return
 
-    NestObjectJson = dict()
-    NodeObjectJson = dict()
+    print("Getting OSM Data...Complete (took {} seconds)".format(time.time()))
+    nest_mons = ""
+    if NEST_SPECIES_LIST:
+        filtered_species = set(NEST_SPECIES_LIST) - set(config['event_poke'])
+        for i in filtered_species:
+            if nest_mons == "":
+                nest_mons = "'"+ str(i) +"'"
+            else:
+                nest_mons = nest_mons + ",'"+ str(i) +"'"
+    else:
+        nest_mons = "''"
     #print(response.text)
-    park_polys = dict()
-    nest_polys = list()
+    print("##"*20)
 
-    for n in nest_json['elements']:
-        if 'nodes' in n:
-            NestObjectJson[n['id']] = n
-            NestObjectJson[n['id']]['PolyPoints'] = list()
-            NestObjectJson[n['id']]['ShapelyPoly'] = ""
-            NestObjectJson[n['id']]['PokeStops'] = list()
-            NestObjectJson[n['id']]['SpawnPoints'] = list()
-            NestObjectJson[n['id']]['PokemonSpawns'] = list()
-            NestObjectJson[n['id']]['CenterPoint'] = ""
-            NestObjectJson[n['id']]['CenterLat'] = ""
-            NestObjectJson[n['id']]['CenterLon'] = ""
-
-        if 'lat' in n:
-            NodeObjectJson[n['id']] = n
-            vars = n['lat'], n['lon']
-            #print(vars)
-            NodeObjectJson[n['id']]['LatLon'] = vars
-
-
-    for n2 in NestObjectJson:
-        for node in NestObjectJson[n2]['nodes']:
-            NestObjectJson[n2]['PolyPoints'].append(NodeObjectJson[node]['LatLon'])
-
-    for n2 in NestObjectJson:
-        for (lat, lon) in NestObjectJson[n2]['PolyPoints']:
-            (lon, lat)
-        #n2_poly = Polygon(NestObjectJson[n2]['PolyPoints'])
-        n2_poly = Polygon([list((lon,lat) for (lat, lon) in NestObjectJson[n2]['PolyPoints'])])
-        n2_poly_props = {
-            "stroke": config["json-stroke"],
-            "stroke-width": config['json-stroke-width'],
-            "stroke-opacity": config['json-stroke-opacity'],
-            "fill": config['json-fill'],
-            "fill-opacity": config['json-fill-opacity']
-        }
-        park_polys[n2] = Feature(geometry=n2_poly, id=n2, properties=n2_poly_props)
-        for node in NestObjectJson[n2]['nodes']:
-            NestObjectJson[n2]['ShapelyPoly'] = geometry.MultiPoint(NestObjectJson[n2]['PolyPoints']).convex_hull
-        centerp = NestObjectJson[n2]['ShapelyPoly'].centroid
-        NestObjectJson[n2]['CenterLat'] = str(centerp.x)
-        NestObjectJson[n2]['CenterLon'] = str(centerp.y)
-    print("Connect/Start DB Session")
-    mydb_r = connector.connect(
+    nodes = dict()
+    areas = list()
+    for element in nest_json['elements']:
+        if not "type" in element:
+            continue
+        if element["type"] == "node":
+            nodes[element["id"]] = {
+                "lat": element["lat"],
+                "lon": element["lon"]
+            }
+        elif element["type"] == "way":
+            if "nodes" not in element and not element["nodes"]:
+                continue
+            areas.append(element)
+    print("Initialize/Start DB Session")
+    mydb_r = connect(
         host=config['db_r_host'],
         user=config['db_r_user'],
         passwd=config['db_r_pass'],
         database=config['db_r_name'],
-        port=config['db_r_port'])
-    mydb_w = connector.connect(
+        port=config['db_r_port'],
+        charset=config['db_r_charset'],
+        autocommit=True)
+    mydb_w = connect(
         host=config['db_w_host'],
         user=config['db_w_user'],
         passwd=config['db_w_pass'],
         database=config['db_w_name'],
-        port=config['db_w_port'])
+        port=config['db_w_port'],
+        charset=config['db_w_charset'],
+        autocommit=True)
 
     mycursor_r = mydb_r.cursor()
     mycursor_w = mydb_w.cursor()
-    print("Connection clear, start doing db stuff")
+    print("Connection clear")
     # Delete old Nest data
     if config['delete_old']:
         print("Delete Old Nests")
@@ -383,152 +417,214 @@ def analyze_nest_data(config):
             )
         )
         print("Delete Old Nests - Complete")
+    print("Start Analyzing Nests")
 
-    # Get all Pokestops with id, lat and lon
-    mycursor_r.execute(
-        POKESTOP_SELECT_QUERY.format(
-            db_name=config['db_r_name'],
-            db_pokestop=config['db_pokestop'],
-            min_lat=config['p1_lat'],
-            max_lat=config['p2_lat'],
-            min_lon=config['p1_lon'],
-            max_lon=config['p2_lon']
-        )
-    )
-    myresult_pokestops = mycursor_r.fetchall()
+    all_areas = list()
+    failed_nests = defaultdict(int)
+    areas_len = len(areas)
+    for (idx, area) in enumerate(areas, start=1):
+        area_name = "Unknown Areaname"
+        if "tags" in area and "name" in area["tags"]:
+            area_name = area["tags"]["name"]
+        progress(idx, areas_len, "({}/{}) {}".format(
+            idx,
+            areas_len,
+            "Starting to analyze Nest"))
+        area_points = list()
+        for point in area['nodes']:
+            point_coords = nodes[point]
+            area_points.append([point_coords['lon'], point_coords['lat']])
+        area_poly = Polygon([area_points])
+        area_poly_props = {
+            "name": area_name,
+            "stroke": config["json-stroke"],
+            "stroke-width": config['json-stroke-width'],
+            "stroke-opacity": config['json-stroke-opacity'],
+            "fill": config['json-fill'],
+            "fill-opacity": config['json-fill-opacity']
+        }
+        area_shapeley_poly = geometry.MultiPoint(area_points).convex_hull
+        area_center_point = area_shapeley_poly.centroid
+        min_lon, min_lat, max_lon, max_lat = area_shapeley_poly.bounds
 
-    # Get all Spawnpoints with id, lat and lon
-    mycursor_r.execute(
-        SPAWNPOINT_SELECT_QUERY.format(
+        area_pokestops = dict()
+        if config['pokestop_pokemon']:
+            # Get all Pokestops with id, lat and lon
+            progress(idx, areas_len, "({}/{}) {}".format(
+                idx,
+                areas_len,
+                "Get all Pokestops within min/max lat/lon"))
+            pokestop_sel_query = POKESTOP_SELECT_QUERY.format(
+                db_name=config['db_r_name'],
+                db_pokestop=config['db_pokestop'],
+                min_lat=min_lat,
+                max_lat=max_lat,
+                min_lon=min_lon,
+                max_lon=max_lon
+            )
+            #print(pokestop_sel_query)
+            mycursor_r.execute(pokestop_sel_query)
+            myresult_pokestops = mycursor_r.fetchall()
+            progress(idx, areas_len, "({}/{}) {}".format(
+                idx,
+                areas_len,
+                "Got all wanted Pokestops - now filter them"))
+            for pkstp in myresult_pokestops:
+                pkst_point = geometry.Point(pkstp[2], pkstp[1])
+                if pkst_point.within(area_shapeley_poly):
+                    area_pokestops[pkstp[0]] = pkst_point
+            progress(idx, areas_len, "({}/{}) {}".format(
+                idx,
+                areas_len,
+                "Filtering of all Pokestops complete"))
+
+        area_spawnpoints = dict()
+        progress(idx, areas_len, "({}/{}) {}".format(
+            idx,
+            areas_len,
+            "Get all Spawnpoints within min/max lat/lon"))
+        # Get all Spawnpoints with id, lat and lon
+        spawnpoint_sel_query = SPAWNPOINT_SELECT_QUERY.format(
             db_name=config['db_r_name'],
             db_spawnpoint=config['db_spawnpoint'],
-            min_lat=config['p1_lat'],
-            max_lat=config['p2_lat'],
-            min_lon=config['p1_lon'],
-            max_lon=config['p2_lon']
+            sp_id=config['db_spawnpoint_id'],
+            lat=config['db_spawnpoint_lat'],
+            lon=config['db_spawnpoint_lon'],
+            min_lat=min_lat,
+            max_lat=max_lat,
+            min_lon=min_lon,
+            max_lon=max_lon
         )
-    )
-    myresultSpawnPoints = mycursor_r.fetchall()
+        #print(spawnpoint_sel_query)
+        mycursor_r.execute(spawnpoint_sel_query)
+        my_result_spawnsoints = mycursor_r.fetchall()
+        progress(idx, areas_len, "({}/{}) {}".format(
+            idx,
+            areas_len,
+            "Got all wanted Spawnpoints - now filter them"))
+        for spwn in my_result_spawnsoints:
+            spwn_point = geometry.Point(spwn[2], spwn[1])
+            if spwn_point.within(area_shapeley_poly):
+                area_spawnpoints[spwn[0]] = spwn_point
+        progress(idx, areas_len, "({}/{}) {}".format(
+            idx,
+            areas_len,
+            "Filtering of all Spawnpoints complete"))
 
-
-    for pkstp in myresult_pokestops:
-        pkstpPoint = geometry.Point(pkstp[1], pkstp[2])
-        all_pokestops[pkstp[0]] = pkstpPoint
-
-    for spwn in myresultSpawnPoints:
-        spwnPoint = geometry.Point(spwn[1], spwn[2])
-        all_spawn_points[spwn[0]] = spwnPoint
-
-
-    for nst in NestObjectJson:
-        print("Getting spawn point and pokestop data for nest")
-        for pkstpKey, pkstp in all_pokestops.items():
-            if pkstp.within(NestObjectJson[nst]['ShapelyPoly']):
-                NestObjectJson[nst]['PokeStops'].append(pkstpKey)
-        for spwnKey, spwn in all_spawn_points.items():
-            if spwn.within(NestObjectJson[nst]['ShapelyPoly']):
-                NestObjectJson[nst]['SpawnPoints'].append(spwnKey)
-
-
-    nest_mons = ""
-    if len(NEST_SPECIES_LIST) > 0:
-        filtered_species = set(NEST_SPECIES_LIST) - set(config['event_poke'])
-        for i in filtered_species:
-            if nest_mons == "":
-                nest_mons = "'"+ str(i) +"'"
-            else:
-                nest_mons = nest_mons + ",'"+ str(i) +"'"
-    else:
-        nest_mons = "''"
-
-    print(NestObjectJson)
-    for nst in NestObjectJson:
-        pokestop_in = ""
-        spawnpoint_in = ""
-
-        if len(NestObjectJson[nst]['PokeStops']) < 1 and len(NestObjectJson[nst]['SpawnPoints']) < 1:
+        if not area_pokestops and not area_spawnpoints:
+            failed_nests["Park has no Stops and no Spawnpoints, ignore it"] += 1
             continue
-
-        if len(NestObjectJson[nst]['PokeStops']) > 0:
-            for i in NestObjectJson[nst]['PokeStops']:
-                pokestop_in = pokestop_in + ",'"+ str(i) +"'"
-            pokestop_in = pokestop_in[1:]
-        else:
-            pokestop_in = "''"
-        if len(NestObjectJson[nst]['SpawnPoints']) > 0:
-            for i in NestObjectJson[nst]['SpawnPoints']:
-                spawnpoint_in = spawnpoint_in + ",'"+ str(i) +"'"
-            spawnpoint_in = spawnpoint_in[1:]
-        else:
-            spawnpoint_in = "''"
-
+        if (len(area_pokestops) < 1) and (
+                len(area_spawnpoints) < config['min_spawn']):
+            failed_nests["Park has not enough Spawnpoints, ignore it"] += 1
+            continue
+        spawnpoint_in = "'{}'".format("','".join(str(nr) for nr in area_spawnpoints))
+        pokestop_in = "'{}'".format("','".join(str(nr) for nr in area_pokestops))
         #print(spawnpoint_in)
         #print(pokestop_in)
         #print(nest_mons)
 
         # Use data since last change:
         reset_time = int(time.time()) - (config['timespan']*3600)
-
-        query = NEST_SELECT_QUERY.format(
+        # RDM uses pokestop_ids, MAD not
+        if config['pokestop_pokemon']:
+            progress(idx, areas_len, "({}/{}) {}".format(
+                idx,
+                areas_len,
+                "Get all Pokes from stops and spawnpoints within nest area"))
+            nest_query = NEST_SELECT_QUERY_STOP
+        else:
+            progress(idx, areas_len, "({}/{}) {}".format(
+                idx,
+                areas_len,
+                "Get all Pokes from spawnpoints within nest area"))
+            nest_query = NEST_SELECT_QUERY
+        query = nest_query.format(
             db_name=config['db_r_name'],
             db_pokemon_table=config['db_pokemon'],
+            pokemon_timestamp=config['db_pokemon_timestamp'],
             pokestop_in=pokestop_in,
+            spawn_id=config['db_pokemon_spawnid'],
             spawnpoint_in=spawnpoint_in,
             nest_mons=nest_mons,
             reset_time=str(reset_time)
         )
-        print(query)
+        #print(query)
         mycursor_r.execute(query)
         myresult = mycursor_r.fetchall()
-
+        progress(idx, areas_len, "({}/{}) {}".format(
+            idx,
+            areas_len,
+            "Got all Pokes from Nest area"))
+        area_poke = (0, 0)
         for mrsp in myresult:
-            rt = mrsp[0], mrsp[1]
-            NestObjectJson[nst]['PokemonSpawns'].append(rt)
+            poke_id, poke_amount = int(mrsp[0]), int(mrsp[1])
+            if poke_amount < area_poke[1]:
+                continue
+            area_poke = (poke_id, poke_amount)
+        progress(idx, areas_len, "({}/{}) {}".format(
+            idx,
+            areas_len,
+            "Filter and insert Nests"))
+        if area_poke[1] < config['min_pokemon']:
+            failed_nests["Not enough Pokes in this Area to specify a real Nest"] += 1
+            continue
 
+        current_time = int(time.time())
 
-    current_time = int(time.time())
+        progress(idx, areas_len, "({}/{}) {}".format(
+            idx,
+            areas_len,
+            "Found Probable Nest - insert it now in db"))
+        # Insert Nest data to db
+        insert_query = NEST_INSERT_QUERY.format(
+            db_name=config['db_w_name'],
+            db_nests=config['db_nest'])
 
-    for x in NestObjectJson:
-        if len(NestObjectJson[x]['PokemonSpawns']) > 2:
-            if NestObjectJson[x]['PokemonSpawns'][0][1] >= config['min_pokemon']:
-                nest_polys.append(park_polys[NestObjectJson[x]['id']])
-                print("Found Probable Nest")
-                # Insert Nest data to db
-                sql = NEST_INSERT_QUERY.format(
-                    db_name=config['db_w_name'],
-                    db_nests=config['db_nest'],
-                    nest_id=str(NestObjectJson[x]['id']),
-                    center_lat=str(NestObjectJson[x]['CenterLat']),
-                    center_lon=str(NestObjectJson[x]['CenterLon']),
-                    poke_id=str(NestObjectJson[x]['PokemonSpawns'][0][0]),
-                    type_=0,
-                    poke_count=(NestObjectJson[x]['PokemonSpawns'][0][1] / config['timespan']),
-                    current_time=current_time
-                )
-                print(sql)
-                mycursor_w.execute(sql)
+        insert_args = {
+            "nest_id": str(area['id']),
+            "name": area_name,
+            "lat": float(area_center_point.x),
+            "lon": float(area_center_point.y),
+            "pokemon_id": int(area_poke[0]),
+            "type": 0,
+            "pokemon_count": int(area_poke[1]),
+            "pokemon_avg": area_poke[1] / float(config['timespan']),
+            "current_time": current_time,
+        }
+        #print(sql)
+        mycursor_w.execute(insert_query, insert_args)
+        print("\nNest added in DB\n")
+        all_areas.append(
+            Feature(
+                geometry=area_poly,
+                id=area['id'],
+                properties=area_poly_props))
 
-    mydb_r.commit()
     mydb_r.close()
-    mydb_w.commit()
     mydb_w.close()
 
+    print("\nNest analyzing took {:.2f} minutes".format(
+        (time.time() - start_time)/60))
+    if all_areas:
+        print("All Nests Added ({}):\n############".format(len(all_areas)))
+    else:
+        print("No Nests Added")
+    print("No nest reasons:\n############") if failed_nests else "No false positive Parks"
+    for (key, value) in failed_nests.items():
+        print("{}: {}".format(key, value))
 
 
-    #f = open(config['save_path'], "w")
-    #f.write(str(NestObjectJson))
-    #f.write(json.dumps(FeatureCollection(nest_polys), indent=4, sort_keys=True))
-    #f.close()
+
     with open(config['save_path'], "w") as file_:
-        json.dump(FeatureCollection(nest_polys), file_, indent=4)
-
-    #PrettyJson = json.dumps(NodeObjectJson, indent=4, sort_keys=False)
+        json.dump(FeatureCollection(all_areas), file_, indent=4)
+        print("geoJSON saved successfully")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("-c", "--config", default="default.ini",
-        help="Config file to use")
+    parser.add_argument(
+        "-c", "--config", default="default.ini", help="Config file to use")
     args = parser.parse_args()
     config_path = args.config
     config = create_config(config_path)
