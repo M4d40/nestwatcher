@@ -39,7 +39,6 @@ DEFAULT_CONFIG = "default.ini"
 
 ### Overpass api data
 OSM_API = "https://overpass-api.de/api/interpreter"
-OSM_DATE = "2018-04-09T01:32:00Z"
 OSM_TAGS = """
 way["landuse"="farmland"];
 way["landuse"="farmyard"];
@@ -275,6 +274,9 @@ def create_config(config_path):
     config['verbose'] = config_raw.getboolean(
         'Other',
         'VERBOSE')
+    config['osm_date'] = config_raw.get(
+        'Other',
+        'OSM_DATE')
 
 
     return config
@@ -317,7 +319,7 @@ def print_configs(config):
     print("~"*15)
 
 
-def osm_uri(p1_lat, p1_lon, p2_lat, p2_lon):
+def osm_uri(p1_lat, p1_lon, p2_lat, p2_lon, osm_date):
     """Generate the OSM uri for the OSM data"""
     osm_bbox = "[bbox:{p1_lat},{p1_lon},{p2_lat},{p2_lon}]".format(
         p1_lat=p1_lat,
@@ -327,7 +329,7 @@ def osm_uri(p1_lat, p1_lon, p2_lat, p2_lon):
     )
     osm_data = "?data="
     osm_type = "[out:json]"
-    date = '[date:"{osm_date}"];'.format(osm_date=OSM_DATE)
+    date = '[date:"{osm_date}"];'.format(osm_date=osm_date)
     tag_data = OSM_TAGS.replace("\n", "")
     osm_tag_data = "({osm_tags});".format(osm_tags=tag_data)
     osm_end = "out;>;out skel qt;"
@@ -342,7 +344,8 @@ def analyze_nest_data(config):
         config['p1_lat'],
         config['p1_lon'],
         config['p2_lat'],
-        config['p2_lon']
+        config['p2_lon'],
+        config['osm_date'],
     )
     print("Overpass url:")
     print(nest_url)
