@@ -256,6 +256,9 @@ def create_config(config_path):
     config['save_path'] = config_raw.get(
         'Geojson',
         'SAVE_PATH')
+    config['geojson_extend'] = config_raw.getboolean(
+        'Geojson',
+        'GEOJSON_EXTEND')
     config['json-stroke'] = config_raw.get(
         'Geojson',
         'STROKE')
@@ -618,8 +621,13 @@ def analyze_nest_data(config):
         print("{}: {}".format(key, value))
 
 
-
-    with open(config['save_path'], "w") as file_:
+    if config['geojson_extend']:
+        with open(config['save_path'], 'r') as old_file_:
+            old_geojson = json.load(old_file_)
+            all_areas += old_geojson['features']
+            print('old areas added to the new ones')
+    with open(config['save_path'], 'w') as file_:
+        print('write geojson')
         json.dump(FeatureCollection(all_areas), file_, indent=4)
         print("geoJSON saved successfully")
 

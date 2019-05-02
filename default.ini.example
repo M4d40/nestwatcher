@@ -39,6 +39,7 @@ TABLE_NESTS = nests
 
 [Geojson]
 SAVE_PATH = nest.json
+GEOJSON_EXTEND = False
 STROKE = #352BFF
 STROKE-WIDTH = 2
 STROKE-OPACITY = 1
