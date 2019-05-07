@@ -111,7 +111,7 @@ WHERE (
     AND
     pokemon_id IN ({nest_mons})
     AND
-    {pokemon_timestamp} >= {reset_time})
+    UNIX_TIMESTAMP({pokemon_timestamp}) >= {reset_time})
 GROUP BY pokemon_id
 ORDER BY count desc """
 NEST_SELECT_QUERY_STOP = """SELECT pokemon_id, COUNT(pokemon_id) AS count
@@ -125,7 +125,7 @@ WHERE (
     AND
     pokemon_id IN ({nest_mons})
     AND
-    {pokemon_timestamp} >= {reset_time})
+    UNIX_TIMESTAMP({pokemon_timestamp}) >= {reset_time})
 GROUP BY pokemon_id
 ORDER BY count desc """
 NEST_DELETE_QUERY = "DELETE FROM {db_name}.{db_nests}"
