@@ -541,21 +541,21 @@ def analyze_nest_data(config):
                 idx,
                 areas_len,
                 "Get all Pokes from stops and spawnpoints within nest area"))
+            nest_query = NEST_SELECT_QUERY_STOP
             if not config['use_unix_timestamp']:
-                NEST_SELECT_QUERY_STOP = NEST_SELECT_QUERY_STOP.replace(
+                nest_query = NEST_SELECT_QUERY_STOP.replace(
                     "UNIX_TIMESTAMP({pokemon_timestamp})",
                     "{pokemon_timestamp}")
-            nest_query = NEST_SELECT_QUERY_STOP
         else:
             progress(idx, areas_len, "({}/{}) {}".format(
                 idx,
                 areas_len,
                 "Get all Pokes from spawnpoints within nest area"))
+            nest_query = NEST_SELECT_QUERY
             if not config['use_unix_timestamp']:
-                NEST_SELECT_QUERY = NEST_SELECT_QUERY.replace(
+                nest_query = NEST_SELECT_QUERY.replace(
                     "UNIX_TIMESTAMP({pokemon_timestamp})",
                     "{pokemon_timestamp}")
-            nest_query = NEST_SELECT_QUERY
         query = nest_query.format(
             db_name=config['db_r_name'],
             db_pokemon_table=config['db_pokemon'],
