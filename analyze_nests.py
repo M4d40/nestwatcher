@@ -232,6 +232,9 @@ def create_config(config_path):
     config['db_spawnpoint_lon'] = config_raw.get(
         'DB Read',
         'TABLE_SPAWNPOINT_LON')
+    config['use_unix_timestamp'] = config_raw.getboolean(
+        'DB Read',
+        'USE_UNIX_TIMESTAMP')
     config['db_w_host'] = config_raw.get(
         'DB Write',
         'HOST')
@@ -538,12 +541,20 @@ def analyze_nest_data(config):
                 idx,
                 areas_len,
                 "Get all Pokes from stops and spawnpoints within nest area"))
+            if not config['use_unix_timestamp']:
+                NEST_SELECT_QUERY_STOP = NEST_SELECT_QUERY_STOP.replace(
+                    "UNIX_TIMESTAMP({pokemon_timestamp})",
+                    "{pokemon_timestamp}")
             nest_query = NEST_SELECT_QUERY_STOP
         else:
             progress(idx, areas_len, "({}/{}) {}".format(
                 idx,
                 areas_len,
                 "Get all Pokes from spawnpoints within nest area"))
+            if not config['use_unix_timestamp']:
+                NEST_SELECT_QUERY = NEST_SELECT_QUERY.replace(
+                    "UNIX_TIMESTAMP({pokemon_timestamp})",
+                    "{pokemon_timestamp}")
             nest_query = NEST_SELECT_QUERY
         query = nest_query.format(
             db_name=config['db_r_name'],
