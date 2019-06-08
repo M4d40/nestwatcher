@@ -262,7 +262,7 @@ def create_config(config_path):
     config['geojson_extend'] = config_raw.getboolean(
         'Geojson',
         'GEOJSON_EXTEND')
-    config['default_park_name'] = config_raw.getboolean(
+    config['default_park_name'] = config_raw.get(
         'Geojson',
         'DEFAULT_PARK_NAME')
     config['json-stroke'] = config_raw.get(
