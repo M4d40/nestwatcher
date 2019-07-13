@@ -262,6 +262,9 @@ def create_config(config_path):
     config['geojson_extend'] = config_raw.getboolean(
         'Geojson',
         'GEOJSON_EXTEND')
+    config['default_park_name'] = config_raw.get(
+        'Geojson',
+        'DEFAULT_PARK_NAME')
     config['json-stroke'] = config_raw.get(
         'Geojson',
         'STROKE')
@@ -432,7 +435,7 @@ def analyze_nest_data(config):
     failed_nests = defaultdict(int)
     areas_len = len(areas)
     for (idx, area) in enumerate(areas, start=1):
-        area_name = "Unknown Areaname"
+        area_name = config['default_park_name']
         if "tags" in area and "name" in area["tags"]:
             area_name = area["tags"]["name"]
         progress(idx, areas_len, "({}/{}) {}".format(

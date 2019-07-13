@@ -41,6 +41,7 @@ TABLE_NESTS = nests
 [Geojson]
 SAVE_PATH = nest.json
 GEOJSON_EXTEND = False
+DEFAULT_PARK_NAME = Unknown Parkname
 STROKE = #352BFF
 STROKE-WIDTH = 2
 STROKE-OPACITY = 1
