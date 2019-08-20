@@ -10,6 +10,7 @@ Refactored by M4d40
 from collections import defaultdict
 
 import argparse
+import io
 import json
 import sys
 import time
@@ -36,6 +37,8 @@ except ImportError:
 
 
 DEFAULT_CONFIG = "default.ini"
+
+FILENAME = "OSM_DATA_{area}_{date}.json"
 
 ### Overpass api data
 OSM_API = "https://overpass-api.de/api/interpreter"
@@ -178,6 +181,9 @@ def create_config(config_path):
     config['pokestop_pokemon'] = config_raw.getboolean(
         'Nest Config',
         'POKESTOP_POKEMON')
+    config['area_name'] = config_raw.get(
+        'Area',
+        'NAME')
     config['p1_lat'] = config_raw.getfloat(
         'Area',
         'POINT1_LAT')
@@ -280,6 +286,9 @@ def create_config(config_path):
     config['json-fill-opacity'] = config_raw.getfloat(
         'Geojson',
         'FILL-OPACITY')
+    config['encoding'] = config_raw.get(
+        'Other',
+        'ENCODING')
     config['verbose'] = config_raw.getboolean(
         'Other',
         'VERBOSE')
@@ -294,6 +303,7 @@ def create_config(config_path):
 def print_configs(config):
     """Print the used config."""
     print("\nFollowing Configs will be used:")
+    print("Area: {}".format(config["area_name"]))
     print("-"*15)
     print("{} hours will be used as timespan".format(config['timespan']))
     print("Minimum amount of pokes to count as Nest: {}".format(config['min_pokemon']))
@@ -348,23 +358,39 @@ def osm_uri(p1_lat, p1_lon, p2_lat, p2_lon, osm_date):
 
 def analyze_nest_data(config):
     """ Analyze nest data """
-    start_time = time.time()
-    nest_url = osm_uri(
-        config['p1_lat'],
-        config['p1_lon'],
-        config['p2_lat'],
-        config['p2_lon'],
-        config['osm_date'],
-    )
-    print("Overpass url:")
-    print(nest_url)
-    print("Getting OSM Data...")
-    osm_session = requests.Session()
 
-    response = osm_session.get(nest_url)
+    def _city_progress(count, total, status=""):
+        status = "[{}] {}".format(config["area_name"], status)
+        progress(count, total, status)
+    start_time = time.time()
+    osm_file_name = FILENAME.format(
+            area=config['area_name'],
+            date=config['osm_date'])
+    try:
+        with io.open(osm_file_name, mode='r', encoding=config["encoding"]) as osm_file:
+            print("OSM Data file found, we will use this! :D")
+            nest_json = json.loads(osm_file.read())
+    except IOError:
+        print("No OSM Data file found, will get the data now.\n")
+        nest_url = osm_uri(
+            config['p1_lat'],
+            config['p1_lon'],
+            config['p2_lat'],
+            config['p2_lon'],
+            config['osm_date'],
+        )
+        print("{} Overpass url:".format(config["area_name"]))
+        print(nest_url)
+        print("Getting OSM Data...")
+        osm_session = requests.Session()
+
+        response = osm_session.get(nest_url)
+        nest_json = json.loads(response.text)
+        with io.open(osm_file_name, mode='w', encoding=config["encoding"]) as osm_file:
+            osm_file.write(response.text)
+            print("OSM Data received and is saved in OSM Data file")
 
     # global nest_json
-    nest_json = json.loads(response.text)
     if not nest_json:
         print("Error getting osm data")
         print(nest_json)
@@ -438,7 +464,7 @@ def analyze_nest_data(config):
         area_name = config['default_park_name']
         if "tags" in area and "name" in area["tags"]:
             area_name = area["tags"]["name"]
-        progress(idx, areas_len, "({}/{}) {}".format(
+        _city_progress(idx, areas_len, "({}/{}) {}".format(
             idx,
             areas_len,
             "Starting to analyze Nest"))
@@ -462,7 +488,7 @@ def analyze_nest_data(config):
         area_pokestops = dict()
         if config['pokestop_pokemon']:
             # Get all Pokestops with id, lat and lon
-            progress(idx, areas_len, "({}/{}) {}".format(
+            _city_progress(idx, areas_len, "({}/{}) {}".format(
                 idx,
                 areas_len,
                 "Get all Pokestops within min/max lat/lon"))
@@ -477,7 +503,7 @@ def analyze_nest_data(config):
             #print(pokestop_sel_query)
             mycursor_r.execute(pokestop_sel_query)
             myresult_pokestops = mycursor_r.fetchall()
-            progress(idx, areas_len, "({}/{}) {}".format(
+            _city_progress(idx, areas_len, "({}/{}) {}".format(
                 idx,
                 areas_len,
                 "Got all wanted Pokestops - now filter them"))
@@ -485,13 +511,13 @@ def analyze_nest_data(config):
                 pkst_point = geometry.Point(pkstp[2], pkstp[1])
                 if pkst_point.within(area_shapeley_poly):
                     area_pokestops[pkstp[0]] = pkst_point
-            progress(idx, areas_len, "({}/{}) {}".format(
+            _city_progress(idx, areas_len, "({}/{}) {}".format(
                 idx,
                 areas_len,
                 "Filtering of all Pokestops complete"))
 
         area_spawnpoints = dict()
-        progress(idx, areas_len, "({}/{}) {}".format(
+        _city_progress(idx, areas_len, "({}/{}) {}".format(
             idx,
             areas_len,
             "Get all Spawnpoints within min/max lat/lon"))
@@ -510,7 +536,7 @@ def analyze_nest_data(config):
         #print(spawnpoint_sel_query)
         mycursor_r.execute(spawnpoint_sel_query)
         my_result_spawnsoints = mycursor_r.fetchall()
-        progress(idx, areas_len, "({}/{}) {}".format(
+        _city_progress(idx, areas_len, "({}/{}) {}".format(
             idx,
             areas_len,
             "Got all wanted Spawnpoints - now filter them"))
@@ -518,7 +544,7 @@ def analyze_nest_data(config):
             spwn_point = geometry.Point(spwn[2], spwn[1])
             if spwn_point.within(area_shapeley_poly):
                 area_spawnpoints[spwn[0]] = spwn_point
-        progress(idx, areas_len, "({}/{}) {}".format(
+        _city_progress(idx, areas_len, "({}/{}) {}".format(
             idx,
             areas_len,
             "Filtering of all Spawnpoints complete"))
@@ -540,7 +566,7 @@ def analyze_nest_data(config):
         reset_time = int(time.time()) - (config['timespan']*3600)
         # RDM uses pokestop_ids, MAD not
         if config['pokestop_pokemon']:
-            progress(idx, areas_len, "({}/{}) {}".format(
+            _city_progress(idx, areas_len, "({}/{}) {}".format(
                 idx,
                 areas_len,
                 "Get all Pokes from stops and spawnpoints within nest area"))
@@ -550,7 +576,7 @@ def analyze_nest_data(config):
                     "UNIX_TIMESTAMP({pokemon_timestamp})",
                     "{pokemon_timestamp}")
         else:
-            progress(idx, areas_len, "({}/{}) {}".format(
+            _city_progress(idx, areas_len, "({}/{}) {}".format(
                 idx,
                 areas_len,
                 "Get all Pokes from spawnpoints within nest area"))
@@ -572,7 +598,7 @@ def analyze_nest_data(config):
         #print(query)
         mycursor_r.execute(query)
         myresult = mycursor_r.fetchall()
-        progress(idx, areas_len, "({}/{}) {}".format(
+        _city_progress(idx, areas_len, "({}/{}) {}".format(
             idx,
             areas_len,
             "Got all Pokes from Nest area"))
@@ -582,7 +608,7 @@ def analyze_nest_data(config):
             if poke_amount < area_poke[1]:
                 continue
             area_poke = (poke_id, poke_amount)
-        progress(idx, areas_len, "({}/{}) {}".format(
+        _city_progress(idx, areas_len, "({}/{}) {}".format(
             idx,
             areas_len,
             "Filter and insert Nests"))
@@ -592,7 +618,7 @@ def analyze_nest_data(config):
 
         current_time = int(time.time())
 
-        progress(idx, areas_len, "({}/{}) {}".format(
+        _city_progress(idx, areas_len, "({}/{}) {}".format(
             idx,
             areas_len,
             "Found Probable Nest - insert it now in db"))
