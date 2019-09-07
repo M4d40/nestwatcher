@@ -184,6 +184,9 @@ def create_config(config_path):
     config['area_name'] = config_raw.get(
         'Area',
         'NAME')
+    config['scan_hours'] = config_raw.getfloat(
+        'Area',
+        'SCAN_HOURS_PER_DAY')
     config['p1_lat'] = config_raw.getfloat(
         'Area',
         'POINT1_LAT')
@@ -635,7 +638,7 @@ def analyze_nest_data(config):
             "pokemon_id": int(area_poke[0]),
             "type": 0,
             "pokemon_count": int(area_poke[1]),
-            "pokemon_avg": area_poke[1] / float(config['timespan']),
+            "pokemon_avg": round ( area_poke[1] / ( float(config['timespan'] / 24 * float(config['scan_hours']))) , 2 ),
             "current_time": current_time,
         }
         #print(sql)
