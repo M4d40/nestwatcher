@@ -638,7 +638,7 @@ def analyze_nest_data(config):
             "pokemon_id": int(area_poke[0]),
             "type": 0,
             "pokemon_count": int(area_poke[1]),
-            "pokemon_avg": round ( area_poke[1] / ( float(config['timespan'] / 24 * float(config['scan_hours']))) , 2 ),
+            "pokemon_avg": round ( area_poke[1] / ( float(config['timespan'] / 24.00 * float(config['scan_hours']))) , 2 ),
             "current_time": current_time,
         }
         #print(sql)
