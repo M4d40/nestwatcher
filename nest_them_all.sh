@@ -7,7 +7,7 @@ nest_conf_folder="custom_configs"
 
 event_list=$(curl -s https://www.serebii.net/pokemongo/events/ultrabonusevent2019part1.shtml|grep -A30000 'Spawn Increases In Event'|grep -B30000 'Specific Egg'|grep \#|sed -e ':a;N;$!ba;s/\n//g' -e 's,\#,,g' -e 's,\t,,g' -e 's|\r|,|g' -e 's|,$||')
 
-sed -i s/EVENT_POKEMON.*/"EVENT_POKEMON = [$event_list,387]"/g default.ini
+sed -i s/EVENT_POKEMON.*/"EVENT_POKEMON = [$event_list]"/g default.ini
 
 # Go Through custom configs and start Nest Discovery
 
