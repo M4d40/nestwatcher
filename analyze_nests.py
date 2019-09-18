@@ -85,8 +85,11 @@ NEST_G3 = [
 NEST_G4 = [
     387, 390, 393, 399, 449
 ]
+NEST_G5 = [
+    495, 498, 501, 504, 506, 509, 522, 590
+]
 NEST_SPECIES_LIST = (
-    NEST_G1 + NEST_G2 + NEST_G3 + NEST_G4)
+    NEST_G1 + NEST_G2 + NEST_G3 + NEST_G4 + NEST_G5)
 
 # SQL Queries #
 ###############
