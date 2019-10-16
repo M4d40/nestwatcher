@@ -22,7 +22,8 @@ from pymysql import connect
 from geojson import (
     Feature,
     FeatureCollection,
-    Polygon
+    Polygon,
+    dumps
 )
 
 # Python2 and Python3 compatibility
@@ -62,6 +63,28 @@ way["natural"="heath"];
 way["natural"="scrub"];
 """
 
+OSM_TAGS_RELATIONS = """
+rel["landuse"="farmland"];
+rel["landuse"="farmyard"];
+rel["landuse"="grass"];
+rel["landuse"="greenfield"];
+rel["landuse"="meadow"];
+rel["landuse"="orchard"];
+rel["landuse"="recreation_ground"];
+rel["landuse"="vineyard"];
+rel["leisure"="garden"];
+rel["leisure"="golf_course"];
+rel["leisure"="park"];
+rel["leisure"="pitch"];
+rel["leisure"="playground"];
+rel["leisure"="park"];
+rel["leisure"="recreation_ground"];
+rel["natural"="grassland"];
+rel["natural"="heath"];
+rel["natural"="moor"];
+rel["natural"="plateau"];
+rel["natural"="scrub"];
+"""
 
 ### Nesting Species
 # Updated 2019.01.30
@@ -184,6 +207,9 @@ def create_config(config_path):
     config['pokestop_pokemon'] = config_raw.getboolean(
         'Nest Config',
         'POKESTOP_POKEMON')
+    config['analyze_multipolygons'] = config_raw.getboolean(
+        'Nest Config',
+        'ANALYZE_MULTIPOLYGONS')
     config['area_name'] = config_raw.get(
         'Area',
         'NAME')
@@ -316,6 +342,7 @@ def print_configs(config):
     print("Ignore Event Pokemon: {}".format(str(config['event_poke'])))
     print("Delete Old Nests from DB: {}".format(str(config['delete_old'])))
     print("File will be saved in: {}".format(str(config['save_path'])))
+    print("Analyze Multipolygons: {}".format(str(config['analyze_multipolygons'])))
     if config['verbose']:
         print("-"*15)
         print("\nVerbose Config:")
@@ -344,7 +371,7 @@ def print_configs(config):
     print("~"*15)
 
 
-def osm_uri(p1_lat, p1_lon, p2_lat, p2_lon, osm_date):
+def osm_uri(p1_lat, p1_lon, p2_lat, p2_lon, osm_date, relations=False):
     """Generate the OSM uri for the OSM data"""
     osm_bbox = "[bbox:{p1_lat},{p1_lon},{p2_lat},{p2_lon}]".format(
         p1_lat=p1_lat,
@@ -355,7 +382,13 @@ def osm_uri(p1_lat, p1_lon, p2_lat, p2_lon, osm_date):
     osm_data = "?data="
     osm_type = "[out:json]"
     date = '[date:"{osm_date}"];'.format(osm_date=osm_date)
-    tag_data = OSM_TAGS.replace("\n", "")
+    if relations:
+        print("\nDO IT BIIIIIGGG WITH RELATIONS !!!!\n")
+        #tag_data = (OSM_TAGS + OSM_TAGS_RELATIONS).replace("\n", "")
+        tag_data = (OSM_TAGS_RELATIONS).replace("\n", "")
+    else:
+        print("\n   Keeep ittt siimpleee\n")
+        tag_data = OSM_TAGS.replace("\n", "")
     osm_tag_data = "({osm_tags});".format(osm_tags=tag_data)
     osm_end = "out;>;out skel qt;"
     uri = OSM_API + osm_data + quote(osm_type + osm_bbox + date + osm_tag_data + osm_end)
@@ -384,6 +417,7 @@ def analyze_nest_data(config):
             config['p2_lat'],
             config['p2_lon'],
             config['osm_date'],
+            relations=config['analyze_multipolygons'],
         )
         print("{} Overpass url:".format(config["area_name"]))
         print(nest_url)
@@ -391,14 +425,22 @@ def analyze_nest_data(config):
         osm_session = requests.Session()
 
         response = osm_session.get(nest_url)
-        nest_json = json.loads(response.text)
+        response.raise_for_status()
+        nest_json = response.json()
+        print(nest_json)
+        # global nest_json
+        if not nest_json["elements"]:
+            print("\nDid not get any Data from the API:")
+            if "remark" in nest_json:
+                print(nest_json["remark"])
+            return
         with io.open(osm_file_name, mode='w', encoding=config["encoding"]) as osm_file:
             osm_file.write(response.text)
             print("OSM Data received and is saved in OSM Data file")
 
     # global nest_json
     if not nest_json:
-        print("Error getting osm data")
+        print("Error getting osm data from file")
         print(nest_json)
         return
 
@@ -417,7 +459,8 @@ def analyze_nest_data(config):
     print("##"*20)
 
     nodes = dict()
-    areas = list()
+    ways = dict()
+    relations = dict()
     for element in nest_json['elements']:
         if not "type" in element:
             continue
@@ -429,7 +472,11 @@ def analyze_nest_data(config):
         elif element["type"] == "way":
             if "nodes" not in element and not element["nodes"]:
                 continue
-            areas.append(element)
+            ways[element["id"]] = element
+        elif element["type"] == "relation":
+            if "members" not in element and not element["members"]:
+                continue
+            relations[element["id"]] = element
     print("Initialize/Start DB Session")
     mydb_r = connect(
         host=config['db_r_host'],
@@ -463,35 +510,146 @@ def analyze_nest_data(config):
         print("Delete Old Nests - Complete")
     print("Start Analyzing Nests")
 
-    all_areas = list()
-    failed_nests = defaultdict(int)
-    areas_len = len(areas)
-    for (idx, area) in enumerate(areas, start=1):
-        area_name = config['default_park_name']
-        if "tags" in area and "name" in area["tags"]:
-            area_name = area["tags"]["name"]
-        _city_progress(idx, areas_len, "({}/{}) {}".format(
-            idx,
-            areas_len,
-            "Starting to analyze Nest"))
+    # Check Relations
+
+    def _convert_way(way):
         area_points = list()
-        for point in area['nodes']:
+        for point in way["nodes"]:
             point_coords = nodes[point]
             area_points.append([point_coords['lon'], point_coords['lat']])
-        area_poly = Polygon([area_points])
+        if len(area_points) < 3:
+            return None  # I know i don't need, but return alone looks sad ^^
+        return geometry.Polygon(area_points)
+
+    areas = dict()
+    all_relations = list()
+    relations_len = len(relations)
+    for (idx, (_id, relation)) in enumerate(relations.items(), start=1):
+        print("check relation:")
+        print("idx: {}, _id: {}, rel: {}".format(idx, _id, relation))
+        relation_name = config['default_park_name']
+        if "tags" in relation and "name" in relation["tags"]:
+            relation_name = relation["tags"]["name"]
+        _city_progress(idx, relations_len, "({}/{}) {}".format(
+            idx,
+            relations_len,
+            "Starting to analyze Nest - Check Relations"))
+        inner_members = list()
+        outer_members = list()
+        for member in relation["members"]:
+            role = member["role"]
+            if member["type"] == "node":
+                # this means, this is just a single poi inside the relation
+                continue
+            way = ways.pop(member["ref"])
+            way_poly = _convert_way(way)
+            if way_poly is None:
+                continue
+            if role == "inner":
+                inner_members.append(way_poly)
+            else:  #role == "outer" or no inner/outer infos are given
+                outer_members.append(way_poly)
+        outer_polygon = geometry.MultiPolygon(outer_members)
+        inner_polygon = geometry.MultiPolygon(inner_members)
+        final_polygon = None
+        if outer_polygon and inner_polygon:
+            outmulti = []
+            for pol in outer_polygon:
+                for pol2 in inner_polygon:
+                    if pol.intersects(pol2)==True:
+                        # If they intersect, create a new polygon that is
+                        # essentially pol minus the intersection
+                        nonoverlap = (pol.symmetric_difference(pol2)).difference(pol2)
+                        outmulti.append(nonoverlap)
+
+                    else:
+                        # Otherwise, just keep the initial polygon as it is.
+                        outmulti.append(pol)
+
+            final_polygon = geometry.MultiPolygon(outmulti)
+        elif outer_polygon:
+            final_polygon = outer_polygon
+        elif inner_polygon:
+            final_polygon = inner_polygon
+        area_shapeley_poly = final_polygon.convex_hull
+        area_center_point = area_shapeley_poly.centroid
+        min_lon, min_lat, max_lon, max_lat = area_shapeley_poly.bounds
+
         area_poly_props = {
-            "name": area_name,
+            "name": relation_name,
             "stroke": config["json-stroke"],
             "stroke-width": config['json-stroke-width'],
             "stroke-opacity": config['json-stroke-opacity'],
             "fill": config['json-fill'],
-            "fill-opacity": config['json-fill-opacity']
+            "fill-opacity": config['json-fill-opacity'],
+            "area_center_point": area_center_point,
+            "min_lon": min_lon,
+            "min_lat": min_lat,
+            "max_lon": max_lon,
+            "max_lat": max_lat,
         }
-        area_shapeley_poly = geometry.MultiPoint(area_points).convex_hull
-        area_center_point = area_shapeley_poly.centroid
-        min_lon, min_lat, max_lon, max_lat = area_shapeley_poly.bounds
+        feat = Feature(
+            geometry=final_polygon,
+            id=_id,
+            properties=area_poly_props)
+        areas[_id] = feat
 
+
+
+    # Check Ways
+    all_areas = list()
+    failed_nests = defaultdict(int)
+    ways_len = len(ways)
+    for (idx, (_id, way)) in enumerate(ways.items(), start=1):
+        way_name = config['default_park_name']
+        if "tags" in way and "name" in way["tags"]:
+            way_name = way["tags"]["name"]
+        _city_progress(idx, ways_len, "({}/{}) {}".format(
+            idx,
+            ways_len,
+            "Starting to analyze Nest - Check Ways"))
+        way_points = list()
+        for point in way['nodes']:
+            point_coords = nodes[point]
+            way_points.append([point_coords['lon'], point_coords['lat']])
+        way_poly = geometry.Polygon(way_points)
+        way_shapeley_poly = way_poly.convex_hull
+        way_center_point = way_shapeley_poly.centroid
+        min_lon, min_lat, max_lon, max_lat = way_shapeley_poly.bounds
+        way_poly_props = {
+            "name": way_name,
+            "stroke": config["json-stroke"],
+            "stroke-width": config['json-stroke-width'],
+            "stroke-opacity": config['json-stroke-opacity'],
+            "fill": config['json-fill'],
+            "fill-opacity": config['json-fill-opacity'],
+            "area_center_point": way_center_point,
+            "min_lon": min_lon,
+            "min_lat": min_lat,
+            "max_lon": max_lon,
+            "max_lat": max_lat,
+        }
+        feat = Feature(
+            geometry=way_poly,
+            id=_id,
+            properties=way_poly_props)
+        areas[_id] = feat
+
+    #FIXME
+    # NOW CHECK ALL AREAS ONE AFTER ANOTHER
+    areas_len = len(areas)
+    print("Let's Check all the areas we got:")
+    for (idx, (_id, area)) in enumerate(areas.items(), start=1):
+        area_points = area["geometry"]
+        area_prop = area["properties"]
+
+        area_center_point = area_prop["area_center_point"]
+        min_lon = area_prop["min_lon"]
+        min_lat = area_prop["min_lat"]
+        max_lon = area_prop["max_lon"]
+        max_lat = area_prop["max_lat"]
         area_pokestops = dict()
+
         if config['pokestop_pokemon']:
             # Get all Pokestops with id, lat and lon
             _city_progress(idx, areas_len, "({}/{}) {}".format(
@@ -506,7 +664,6 @@ def analyze_nest_data(config):
                 min_lon=min_lon,
                 max_lon=max_lon
             )
-            #print(pokestop_sel_query)
             mycursor_r.execute(pokestop_sel_query)
             myresult_pokestops = mycursor_r.fetchall()
             _city_progress(idx, areas_len, "({}/{}) {}".format(
@@ -515,7 +672,7 @@ def analyze_nest_data(config):
                 "Got all wanted Pokestops - now filter them"))
             for pkstp in myresult_pokestops:
                 pkst_point = geometry.Point(pkstp[2], pkstp[1])
-                if pkst_point.within(area_shapeley_poly):
+                if pkst_point.within(geometry.shape(area_points)):
                     area_pokestops[pkstp[0]] = pkst_point
             _city_progress(idx, areas_len, "({}/{}) {}".format(
                 idx,
@@ -539,7 +696,6 @@ def analyze_nest_data(config):
             min_lon=min_lon,
             max_lon=max_lon
         )
-        #print(spawnpoint_sel_query)
         mycursor_r.execute(spawnpoint_sel_query)
         my_result_spawnsoints = mycursor_r.fetchall()
         _city_progress(idx, areas_len, "({}/{}) {}".format(
@@ -548,7 +704,7 @@ def analyze_nest_data(config):
             "Got all wanted Spawnpoints - now filter them"))
         for spwn in my_result_spawnsoints:
             spwn_point = geometry.Point(spwn[2], spwn[1])
-            if spwn_point.within(area_shapeley_poly):
+            if spwn_point.within(geometry.shape(area_points)):
                 area_spawnpoints[spwn[0]] = spwn_point
         _city_progress(idx, areas_len, "({}/{}) {}".format(
             idx,
@@ -564,9 +720,6 @@ def analyze_nest_data(config):
             continue
         spawnpoint_in = "'{}'".format("','".join(str(nr) for nr in area_spawnpoints))
         pokestop_in = "'{}'".format("','".join(str(nr) for nr in area_pokestops))
-        #print(spawnpoint_in)
-        #print(pokestop_in)
-        #print(nest_mons)
 
         # Use data since last change:
         reset_time = int(time.time()) - (config['timespan']*3600)
@@ -601,7 +754,7 @@ def analyze_nest_data(config):
             nest_mons=nest_mons,
             reset_time=str(reset_time)
         )
-        #print(query)
+
         mycursor_r.execute(query)
         myresult = mycursor_r.fetchall()
         _city_progress(idx, areas_len, "({}/{}) {}".format(
@@ -635,7 +788,7 @@ def analyze_nest_data(config):
 
         insert_args = {
             "nest_id": str(area['id']),
-            "name": area_name,
+            "name": area["properties"]["name"],
             "lat": float(area_center_point.x),
             "lon": float(area_center_point.y),
             "pokemon_id": int(area_poke[0]),
@@ -644,14 +797,10 @@ def analyze_nest_data(config):
             "pokemon_avg": round ( area_poke[1] / ( float(config['timespan'] / 24.00 * float(config['scan_hours']))) , 2 ),
             "current_time": current_time,
         }
-        #print(sql)
+
         mycursor_w.execute(insert_query, insert_args)
         print("\nNest added in DB\n")
-        all_areas.append(
-            Feature(
-                geometry=area_poly,
-                id=area['id'],
-                properties=area_poly_props))
+        all_areas.append(area)
 
     mydb_r.close()
     mydb_w.close()
@@ -674,7 +823,7 @@ def analyze_nest_data(config):
             print('old areas added to the new ones')
     with open(config['save_path'], 'w') as file_:
         print('write geojson')
-        json.dump(FeatureCollection(all_areas), file_, indent=4)
+        file_.write(dumps(FeatureCollection(all_areas), indent=4))
         print("geoJSON saved successfully")
 
 
