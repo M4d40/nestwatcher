@@ -612,6 +612,8 @@ def analyze_nest_data(config):
         for point in way['nodes']:
             point_coords = nodes[point]
             way_points.append([point_coords['lon'], point_coords['lat']])
+        if len(way_points) < 3:
+            continue
         way_poly = geometry.Polygon(way_points)
         way_shapeley_poly = way_poly.convex_hull
         way_center_point = way_shapeley_poly.centroid
