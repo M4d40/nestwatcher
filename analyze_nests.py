@@ -7,7 +7,8 @@ Refactored by M4d40
 """
 
 
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
+from datetime import datetime
 
 import argparse
 import io
@@ -38,6 +39,11 @@ except ImportError:
 
 
 DEFAULT_CONFIG = "default.ini"
+POKE_NAMES_FILE = "poke_names.json"
+LOCALE_FILE = "locale.json"
+
+DISCORD_MAX_MSG = 2000 - 100  # -100 to be sure under the limit
+DISCORD_RATE_LIMIT = 1  # in second
 
 FILENAME = "OSM_DATA_{area}_{date}.json"
 
@@ -318,6 +324,30 @@ def create_config(config_path):
     config['json-fill-opacity'] = config_raw.getfloat(
         'Geojson',
         'FILL-OPACITY')
+    config['dc-enabled'] = config_raw.getboolean(
+        'Discord',
+        'ENABLED')
+    config['dc-webhook'] = config_raw.get(
+        'Discord',
+        'WEBHOOK')
+    config['dc-username'] = config_raw.get(
+        'Discord',
+        'USERNAME')
+    config['dc-language'] = config_raw.get(
+        'Discord',
+        'LANGUAGE')
+    config['dc-title'] = config_raw.get(
+        'Discord',
+        'TITLE')
+    config['dc-text'] = config_raw.get(
+        'Discord',
+        'TEXT')
+    config['dc-sort-by'] = config_raw.get(
+        'Discord',
+        'SORT_BY')
+    config['dc-ignore-unnamed'] = config_raw.getboolean(
+        'Discord',
+        'IGNORE_UNNAMED')
     config['encoding'] = config_raw.get(
         'Other',
         'ENCODING')
@@ -521,7 +551,12 @@ def analyze_nest_data(config):
             return None  # I know i don't need, but return alone looks sad ^^
         return geometry.Polygon(area_points)
 
+    with open(POKE_NAMES_FILE) as pk_names_file:
+        poke_names = json.load(pk_names_file)
+    with open(LOCALE_FILE) as loc_file:
+        locale = json.load(loc_file)
     areas = dict()
+    areas_basic = dict()
     all_relations = list()
     relations_len = len(relations)
     for (idx, (_id, relation)) in enumerate(relations.items(), start=1):
@@ -637,7 +672,6 @@ def analyze_nest_data(config):
             properties=way_poly_props)
         areas[_id] = feat
 
-    #FIXME
     # NOW CHECK ALL AREAS ONE AFTER ANOTHER
     areas_len = len(areas)
     print("Let's Check all the areas we got:")
@@ -797,12 +831,14 @@ def analyze_nest_data(config):
             "type": 0,
             "pokemon_count": int(area_poke[1]),
             "pokemon_avg": round ( area_poke[1] / ( float(config['timespan'] / 24.00 * float(config['scan_hours']))) , 2 ),
-            "current_time": current_time,
+            "current_time": current_time
         }
 
         mycursor_w.execute(insert_query, insert_args)
-        print("\nNest added in DB\n")
         all_areas.append(area)
+        insert_args["pokemon_name"] = poke_names[str(area_poke[0])][config["dc-language"]]
+        insert_args["pokemon_type"] = poke_names[str(area_poke[0])]["type"]
+        areas_basic[str(area['id'])] = insert_args
 
     mydb_r.close()
     mydb_w.close()
@@ -817,6 +853,77 @@ def analyze_nest_data(config):
     for (key, value) in failed_nests.items():
         print("{}: {}".format(key, value))
 
+    def discord_webhook():
+        # Sort basic areas
+        sorted_basic_areas = sorted(
+                areas_basic.items(),
+                key=lambda kv: kv[1][config["dc-sort-by"]])
+        sorted_b_areas_dict = OrderedDict(sorted_basic_areas)
+        content = defaultdict(str)
+        content_page = 0
+        for b_area in sorted_b_areas_dict.values():
+            if config['dc-ignore-unnamed'] and (b_area["name"] == config["default_park_name"]):
+                continue
+            nest_time = datetime.utcfromtimestamp(
+                int(b_area["current_time"])).strftime('%Y-%m-%d %H:%M:%S')
+            map_ref = '<https://maps.google.com/maps?q={lon:.5f},{lat:.5f}>'.format(
+                lat=b_area["lat"],
+                lon=b_area["lon"]
+                )
+            g_maps = "[Google Maps]({})".format(map_ref)
+            # convert types:
+            poke_type_emojis = list()
+            for typ in b_area["pokemon_type"]:
+                poke_type_emojis.append(locale["poke-type-emoji"][typ])
+            text = (config["dc-text"] + u"\n").format(
+                park_name=b_area["name"],
+                poke_id=b_area["pokemon_id"],
+                poke_name=b_area["pokemon_name"],
+                poke_avg=b_area["pokemon_avg"],
+                poke_type="/".join(b_area["pokemon_type"]),
+                poke_type_emoji="/".join(poke_type_emojis),
+                time=nest_time,
+                g_maps=g_maps
+            )
+            if len(content[content_page] + text) < DISCORD_MAX_MSG:
+                content[content_page] += text
+            else:
+                content_page += 1
+                content[content_page] += text
+
+        def send_webhook(payload):
+            result = requests.post(
+                 config["dc-webhook"],
+                 data=json.dumps(payload),
+                 headers={"Content-Type": "application/json"})
+
+            if result.status_code > 300:
+                print("Error while sending Webhook")
+                print(result.text)
+            time.sleep(DISCORD_RATE_LIMIT)
+
+        # Send Title of Nest Data:
+        nest_title = config["dc-title"].format(
+            area_name=config["area_name"]
+        ) + "\n"
+        nest_title += ("-"*len(nest_title))
+        payload = {
+            "username": config["dc-username"],
+            "content": nest_title
+            }
+        send_webhook(payload)
+
+        # Send Nest Data
+        for cont in content.values():
+            payload = {
+                "username": config["dc-username"],
+                "content": cont
+            }
+            send_webhook(payload)
+
+
+    if config["dc-enabled"]:
+        discord_webhook()
 
     if config['geojson_extend']:
         with open(config['save_path'], 'r') as old_file_:
