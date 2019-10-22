@@ -29,7 +29,7 @@ The script will use each config in the `custom_configs` folder, one after the ot
 | `DELETE_OLD_NESTS`      | Delete old Nests in DB       | `Boolean`       | `True`       |
 | `EVENT_POKEMON`      | Filter out event pokemon from nest analyze       | `List`       | `[]`       |
 | `POKESTOP_POKEMON`      | Use also Pokemon from pokestops (ONLY USE THIS WITH RDM!)       | `Boolean`       | `True`       |
-| `ANALYZE_MULTIPOLYGONS`      | Analyze only Multipolygons<br /> \[only needed if not all Nests are scanned]<br /> (Use this only with very small areas!)       | `Boolean`       | `False`       |
+| `ANALYZE_MULTIPOLYGONS`      | Analyze only Multipolygons<br /> \[only needed if not all Nests are scanned]<br /> (Use an extra config for each park, to not get limited by API!)       | `Boolean`       | `False`       |
 
 
 
@@ -86,6 +86,19 @@ The script will use each config in the `custom_configs` folder, one after the ot
 | `STROKE-OPACITY`      | Opacity of the Nest-Area-Line      | `Int/Double`       | `1`       |
 | `FILL`      | Color of the Inner-Nest-Area as Hex      | `String`       | `#0651FF`       |
 | `FILL-OPACITY`      | Opacity of the Inner-Nest-Area    | `Int/Double`       | `0.5`       |
+
+
+### [Discord]
+| Variable name | Description                    | Type       | Default Value       |
+| ------------- | ------------- |  ------------------------------ | ------------- |
+| `ENABLE`      | Enable or Disable Discord Webhook      | `Boolean`       | `False`       |
+| `WEBHOOK`      | Link of the Webhook that should be used       | `String`       | `https://discordapp.com/api/webhooks/xxxxx/xxxxxx`       |
+| `USERNAME`      | Username the Bot uses for sending data       | `String`       | `Nest-Bot`       |
+| `LANGUAGE`      | Language for the Pokemon named (`en`, `de`, `fr`, `jp`, `cz` )       | `String`       | `en`       |
+| `SORT_BY`      | For which value the list should be sorted by:<br /> `name` -> Park Name<br /> `pokemon_id` -> Pokedex Nr<br /> `pokemon_name` -> Pokemon Name (Language specific)<br /> `pokemon_avg` -> Average Sighting     | `String`       | `name`       |
+| `IGNORE_UNNAMED`      | Ignore Parks without Names       | `Boolean`       | `True`       |
+| `TITLE`      | Title which will be written before the nest list <br /> Available Blocks: `{park_name}`     | `String`        | `**This is the Nest report for {area_name}**`       |
+| `TEXT`      | Text which will be used to send to Discord <br /> Available Blocks: `{park_name}`, `{poke_name}`, `{poke_type}`,`{poke_type_emoji}`,`{poke_avg}`, `{g_maps}`, `{time}`     | `String`        | `**{park_name}**: {poke_name} ({poke_type_emoji}) => {poke_avg} per hour {g_maps} *[checked at {time}]*`       |
 
 
 ### [Other]

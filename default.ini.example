@@ -51,6 +51,16 @@ STROKE-OPACITY = 1
 FILL =  #0651FF
 FILL-OPACITY = 0.5
 
+[Discord]
+ENABLED = False
+WEBHOOK = https://discordapp.com/api/webhooks/xxxxx/xxxxxx
+USERNAME = Nest-Bot
+LANGUAGE = en
+SORT_BY = pokemon_name
+IGNORE_UNNAMED = True
+TITLE = **This is the Nest report for {area_name}**
+TEXT = **{park_name}**: {poke_name} ({poke_type_emoji}) => {poke_avg} per hour {g_maps} *[checked at {time}]*
+
 [Other]
 ENCODING = utf-8
 VERBOSE = False
