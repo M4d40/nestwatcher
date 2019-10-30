@@ -40,7 +40,6 @@ except ImportError:
 
 DEFAULT_CONFIG = "default.ini"
 POKE_NAMES_FILE = "poke_names.json"
-LOCALE_FILE = "locale.json"
 
 DISCORD_MAX_MSG = 2000 - 100  # -100 to be sure under the limit
 DISCORD_RATE_LIMIT = 1  # in second
@@ -348,6 +347,9 @@ def create_config(config_path):
     config['dc-ignore-unnamed'] = config_raw.getboolean(
         'Discord',
         'IGNORE_UNNAMED')
+    config['dc-locale-file'] = config_raw.get(
+        'Discord',
+        'LOCALE_FILE')
     config['encoding'] = config_raw.get(
         'Other',
         'ENCODING')
@@ -553,7 +555,7 @@ def analyze_nest_data(config):
 
     with open(POKE_NAMES_FILE) as pk_names_file:
         poke_names = json.load(pk_names_file)
-    with open(LOCALE_FILE) as loc_file:
+    with open(config['dc-locale-file']) as loc_file:
         locale = json.load(loc_file)
     areas = dict()
     areas_basic = dict()
@@ -892,15 +894,19 @@ def analyze_nest_data(config):
                 content[content_page] += text
 
         def send_webhook(payload):
-            result = requests.post(
-                 config["dc-webhook"],
-                 data=json.dumps(payload),
-                 headers={"Content-Type": "application/json"})
+            webhooks = json.loads(config["dc-webhook"])
+            if not isinstance(webhooks, list):
+                webhooks = [webhooks]
+            for wh in webhooks:
+                result = requests.post(
+                     wh,
+                     data=json.dumps(payload),
+                     headers={"Content-Type": "application/json"})
 
-            if result.status_code > 300:
-                print("Error while sending Webhook")
-                print(result.text)
-            time.sleep(DISCORD_RATE_LIMIT)
+                if result.status_code > 300:
+                    print("Error while sending Webhook")
+                    print(result.text)
+                time.sleep(DISCORD_RATE_LIMIT)
 
         # Send Title of Nest Data:
         nest_title = config["dc-title"].format(
