@@ -57,9 +57,10 @@ WEBHOOK = ["https://discordapp.com/api/webhooks/xxxxx/xxxxxx"]
 USERNAME = Nest-Bot
 LANGUAGE = en
 SORT_BY = pokemon_name
+SORT_REVERSE = False
 IGNORE_UNNAMED = True
 TITLE = **This is the Nest report for {area_name}**
-TEXT = **{park_name}**: {poke_name} ({poke_type_emoji}) => {poke_avg} per hour {g_maps} *[checked at {time}]*
+TEXT = **{park_name_g}**: {poke_name} {poke_shiny}({poke_type_emoji}) => {poke_avg} per hour
 LOCALE_FILE = locale.json
 
 [Other]

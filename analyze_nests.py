@@ -344,6 +344,9 @@ def create_config(config_path):
     config['dc-sort-by'] = config_raw.get(
         'Discord',
         'SORT_BY')
+    config['dc-sort-reverse'] = config_raw.getboolean(
+        'Discord',
+        'SORT_REVERSE')
     config['dc-ignore-unnamed'] = config_raw.getboolean(
         'Discord',
         'IGNORE_UNNAMED')
@@ -735,12 +738,12 @@ def analyze_nest_data(config):
             max_lon=max_lon
         )
         mycursor_r.execute(spawnpoint_sel_query)
-        my_result_spawnsoints = mycursor_r.fetchall()
+        my_result_spawnpoints = mycursor_r.fetchall()
         _city_progress(idx, areas_len, "({}/{}) {}".format(
             idx,
             areas_len,
             "Got all wanted Spawnpoints - now filter them"))
-        for spwn in my_result_spawnsoints:
+        for spwn in my_result_spawnpoints:
             spwn_point = geometry.Point(spwn[2], spwn[1])
             if spwn_point.within(geometry.shape(area_points)):
                 area_spawnpoints[spwn[0]] = spwn_point
@@ -840,6 +843,7 @@ def analyze_nest_data(config):
         all_areas.append(area)
         insert_args["pokemon_name"] = poke_names[str(area_poke[0])][config["dc-language"]]
         insert_args["pokemon_type"] = poke_names[str(area_poke[0])]["type"]
+        insert_args["pokemon_shiny"] = poke_names[str(area_poke[0])]["shiny"]
         areas_basic[str(area['id'])] = insert_args
 
     mydb_r.close()
@@ -857,13 +861,13 @@ def analyze_nest_data(config):
 
     def discord_webhook():
         # Sort basic areas
-        sorted_basic_areas = sorted(
-                areas_basic.items(),
-                key=lambda kv: kv[1][config["dc-sort-by"]])
-        sorted_b_areas_dict = OrderedDict(sorted_basic_areas)
+        sorted_basic_areas = OrderedDict(sorted(
+                                areas_basic.items(),
+                                key=lambda kv: kv[1][config["dc-sort-by"]],
+                                reverse=config["dc-sort-reverse"]))
         content = defaultdict(str)
         content_page = 0
-        for b_area in sorted_b_areas_dict.values():
+        for b_area in sorted_basic_areas.values():
             if config['dc-ignore-unnamed'] and (b_area["name"] == config["default_park_name"]):
                 continue
             nest_time = datetime.utcfromtimestamp(
@@ -872,15 +876,25 @@ def analyze_nest_data(config):
                 lat=b_area["lat"],
                 lon=b_area["lon"]
                 )
+            park_name = b_area["name"]
             g_maps = "[Google Maps]({})".format(map_ref)
+            park_name_g = u"[{name}]({map_ref})".format(
+                    name=park_name,
+                    map_ref=map_ref)
+
+            poke_shiny = ""
+            if b_area["pokemon_shiny"]:
+                poke_shiny = locale["poke-shiny-emoji"] + " "
             # convert types:
             poke_type_emojis = list()
             for typ in b_area["pokemon_type"]:
                 poke_type_emojis.append(locale["poke-type-emoji"][typ])
             text = (config["dc-text"] + u"\n").format(
-                park_name=b_area["name"],
+                park_name=park_name,
+                park_name_g=park_name_g,
                 poke_id=b_area["pokemon_id"],
                 poke_name=b_area["pokemon_name"],
+                poke_shiny=poke_shiny,
                 poke_avg=b_area["pokemon_avg"],
                 poke_type="/".join(b_area["pokemon_type"]),
                 poke_type_emoji="/".join(poke_type_emojis),

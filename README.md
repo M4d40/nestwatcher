@@ -96,9 +96,10 @@ The script will use each config in the `custom_configs` folder, one after the ot
 | `USERNAME`      | Username the Bot uses for sending data       | `String`       | `Nest-Bot`       |
 | `LANGUAGE`      | Language for the Pokemon named (`en`, `de`, `fr`, `jp`, `cz` )       | `String`       | `en`       |
 | `SORT_BY`      | For which value the list should be sorted by:<br /> `name` -> Park Name<br /> `pokemon_id` -> Pokedex Nr<br /> `pokemon_name` -> Pokemon Name (Language specific)<br /> `pokemon_avg` -> Average Sighting     | `String`       | `name`       |
+| `SORT_REVERSE`      | For reversing the order: `True` | `False`     | `Boolean`       | `False`       |
 | `IGNORE_UNNAMED`      | Ignore Parks without Names       | `Boolean`       | `True`       |
 | `TITLE`      | Title which will be written before the nest list <br /> Available Blocks: `{park_name}`     | `String`        | `**This is the Nest report for {area_name}**`       |
-| `TEXT`      | Text which will be used to send to Discord <br /> Available Blocks: `{park_name}`, `{poke_name}`, `{poke_type}`,`{poke_type_emoji}`,`{poke_avg}`, `{g_maps}`, `{time}`     | `String`        | `**{park_name}**: {poke_name} ({poke_type_emoji}) => {poke_avg} per hour {g_maps} *[checked at {time}]*`       |
+| `TEXT`      | Text which will be used to send to Discord <br /> Available Blocks: `{park_name}`, `{poke_name_g}`, `{poke_shiny}`,`{poke_type}`,`{poke_type_emoji}`,`{poke_avg}`, `{g_maps}`, `{time}`     | `String`        | `**{park_name_g}**: {poke_name} {poke_shiny} ({poke_type_emoji}) => {poke_avg} per hour`       |
 | `LOCALE_FILE`      | Locale file which should be used (for example custom emojis)     | `String`        | `locale.json`       |
 
 
