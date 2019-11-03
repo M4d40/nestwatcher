@@ -26,6 +26,7 @@ from geojson import (
     Polygon,
     dumps
 )
+from serebii import SerebiiPokemonGo
 
 # Python2 and Python3 compatibility
 try:
@@ -206,9 +207,12 @@ def create_config(config_path):
     config['delete_old'] = config_raw.getboolean(
         'Nest Config',
         'DELETE_OLD_NESTS')
+    config['event_automation'] = config_raw.getboolean(
+        'Nest Config',
+        'EVENT_AUTOMATION')
     config['event_poke'] = json.loads(config_raw.get(
         'Nest Config',
-        'EVENT_POKEMON'))
+        'MANUAL_EVENT_POKEMON'))
     config['pokestop_pokemon'] = config_raw.getboolean(
         'Nest Config',
         'POKESTOP_POKEMON')
@@ -377,7 +381,10 @@ def print_configs(config):
     print("-"*15)
     print("{} hours will be used as timespan".format(config['timespan']))
     print("Minimum amount of pokes to count as Nest: {}".format(config['min_pokemon']))
-    print("Ignore Event Pokemon: {}".format(str(config['event_poke'])))
+    if config['event_automation']:
+        print("Event Automation is activated, we will grab Event Details from Serebii")
+    else:
+        print("Manual Event Pokemon:: {}".format(str(config['event_poke'])))
     print("Delete Old Nests from DB: {}".format(str(config['delete_old'])))
     print("File will be saved in: {}".format(str(config['save_path'])))
     print("Analyze Multipolygons: {}".format(str(config['analyze_multipolygons'])))
@@ -483,9 +490,23 @@ def analyze_nest_data(config):
         return
 
     print("Getting OSM Data...Complete (took {} seconds)".format(time.time()))
+
+    event_pokes = set(config['event_poke'])
+    if config['event_automation']:
+        print("Event-Automation active, checking for active events")
+        serebii = SerebiiPokemonGo()
+        active_event = serebii.get_active_event()
+        if active_event:
+            print("Active Event found:")
+            print(active_event)
+            event_pokes = set(active_event.pokemon)
+        else:
+            print("Currently no active Event found, no event pokemon will be used")
+            event_pokes = set()
+
     nest_mons = ""
     if NEST_SPECIES_LIST:
-        filtered_species = set(NEST_SPECIES_LIST) - set(config['event_poke'])
+        filtered_species = set(NEST_SPECIES_LIST) - event_pokes
         for i in filtered_species:
             if nest_mons == "":
                 nest_mons = "'"+ str(i) +"'"
