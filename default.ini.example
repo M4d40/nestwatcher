@@ -56,6 +56,7 @@ ENABLED = False
 WEBHOOK = ["https://discordapp.com/api/webhooks/xxxxx/xxxxxx"]
 USERNAME = Nest-Bot
 LANGUAGE = en
+MIN_SPAWNS_FOR_POST = 3
 SORT_BY = pokemon_name
 SORT_REVERSE = False
 IGNORE_UNNAMED = True
