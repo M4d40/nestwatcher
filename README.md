@@ -95,6 +95,7 @@ The script will use each config in the `custom_configs` folder, one after the ot
 | `WEBHOOK`      | List of links of the Webhooks that should be used       | `String`       | `["https://discordapp.com/api/webhooks/xxxxx/xxxxxx"]`       |
 | `USERNAME`      | Username the Bot uses for sending data       | `String`       | `Nest-Bot`       |
 | `LANGUAGE`      | Language for the Pokemon named (`en`, `de`, `fr`, `jp`, `cz` )       | `String`       | `en`       |
+| `MIN_SPAWNS_FOR_POST`      | Minimum Pokemon spawns per hour to trigger posting via Discord       | `Int/Double`       | `3`       |
 | `SORT_BY`      | For which value the list should be sorted by:<br /> `name` -> Park Name<br /> `pokemon_id` -> Pokedex Nr<br /> `pokemon_name` -> Pokemon Name (Language specific)<br /> `pokemon_avg` -> Average Sighting     | `String`       | `name`       |
 | `SORT_REVERSE`      | For reversing the order: `True` | `False`     | `Boolean`       | `False`       |
 | `IGNORE_UNNAMED`      | Ignore Parks without Names       | `Boolean`       | `True`       |

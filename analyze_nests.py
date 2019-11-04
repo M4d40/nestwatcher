@@ -335,6 +335,9 @@ def create_config(config_path):
     config['dc-language'] = config_raw.get(
         'Discord',
         'LANGUAGE')
+    config['dc-min-spawns-for-post'] = config_raw.get(
+        'Discord',
+        'MIN_SPAWNS_FOR_POST')
     config['dc-title'] = config_raw.get(
         'Discord',
         'TITLE')
@@ -869,6 +872,8 @@ def analyze_nest_data(config):
         content_page = 0
         for b_area in sorted_basic_areas.values():
             if config['dc-ignore-unnamed'] and (b_area["name"] == config["default_park_name"]):
+                continue
+            if float(b_area["pokemon_avg"]) < float(config["dc-min-spawns-for-post"]):
                 continue
             nest_time = datetime.utcfromtimestamp(
                 int(b_area["current_time"])).strftime('%Y-%m-%d %H:%M:%S')
