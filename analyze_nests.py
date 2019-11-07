@@ -148,7 +148,8 @@ WHERE (
     AND
     UNIX_TIMESTAMP({pokemon_timestamp}) >= {reset_time})
 GROUP BY pokemon_id
-ORDER BY count desc """
+ORDER BY count desc
+LIMIT 1"""
 NEST_SELECT_QUERY_STOP = """SELECT pokemon_id, COUNT(pokemon_id) AS count
 FROM {db_name}.{db_pokemon_table}
 WHERE (
@@ -162,7 +163,8 @@ WHERE (
     AND
     UNIX_TIMESTAMP({pokemon_timestamp}) >= {reset_time})
 GROUP BY pokemon_id
-ORDER BY count desc """
+ORDER BY count desc
+LIMIT 1"""
 NEST_DELETE_QUERY = "DELETE FROM {db_name}.{db_nests}"
 NEST_INSERT_QUERY = """INSERT INTO {db_name}.{db_nests} (
     nest_id, name, lon, lat, pokemon_id, type, pokemon_count, pokemon_avg, updated)
@@ -201,6 +203,9 @@ def create_config(config_path):
     config['min_pokemon'] = config_raw.getint(
         'Nest Config',
         'MIN_POKEMON_NEST_COUNT')
+    config['min_avg_pokemon'] = config_raw.getfloat(
+        'Nest Config',
+        'MIN_AVERAGE_POKEMON_NEST_COUNT')
     config['min_spawn'] = config_raw.getint(
         'Nest Config',
         'MIN_SPAWNPOINT_NEST_COUNT')
@@ -339,7 +344,7 @@ def create_config(config_path):
     config['dc-language'] = config_raw.get(
         'Discord',
         'LANGUAGE')
-    config['dc-min-spawns-for-post'] = config_raw.get(
+    config['dc-min-spawns-for-post'] = config_raw.getfloat(
         'Discord',
         'MIN_SPAWNS_FOR_POST')
     config['dc-title'] = config_raw.get(
@@ -713,6 +718,7 @@ def analyze_nest_data(config):
         min_lat = area_prop["min_lat"]
         max_lon = area_prop["max_lon"]
         max_lat = area_prop["max_lat"]
+
         area_pokestops = dict()
 
         if config['pokestop_pokemon']:
@@ -820,24 +826,32 @@ def analyze_nest_data(config):
             reset_time=str(reset_time)
         )
 
+        poke_id = 1
+        poke_count = 1
         mycursor_r.execute(query)
-        myresult = mycursor_r.fetchall()
+        poke_data = mycursor_r.fetchone()
+        if poke_data:
+            poke_id, poke_count = map(int, poke_data)
+
         _city_progress(idx, areas_len, "({}/{}) {}".format(
             idx,
             areas_len,
             "Got all Pokes from Nest area"))
-        area_poke = (0, 0)
-        for mrsp in myresult:
-            poke_id, poke_amount = int(mrsp[0]), int(mrsp[1])
-            if poke_amount < area_poke[1]:
-                continue
-            area_poke = (poke_id, poke_amount)
+
+        # (Area_poke/timespan)*(24/scan_hours)
+        poke_avg = round(
+                (poke_count / float(config['timespan'])) * (
+                    24.00 / float(config['scan_hours'])) , 2 )
+
         _city_progress(idx, areas_len, "({}/{}) {}".format(
             idx,
             areas_len,
             "Filter and insert Nests"))
-        if area_poke[1] < config['min_pokemon']:
+        if poke_count < config['min_pokemon']:
             failed_nests["Not enough Pokes in this Area to specify a real Nest"] += 1
+            continue
+        if poke_avg < config['min_avg_pokemon']:
+            failed_nests["Average lower than the min average in config"] += 1
             continue
 
         current_time = int(time.time())
@@ -856,18 +870,18 @@ def analyze_nest_data(config):
             "name": area["properties"]["name"],
             "lat": float(area_center_point.x),
             "lon": float(area_center_point.y),
-            "pokemon_id": int(area_poke[0]),
+            "pokemon_id": int(poke_id),
             "type": 0,
-            "pokemon_count": int(area_poke[1]),
-            "pokemon_avg": round ( area_poke[1] / ( float(config['timespan'] / 24.00 * float(config['scan_hours']))) , 2 ),
+            "pokemon_count": int(poke_count),
+            "pokemon_avg": poke_avg,
             "current_time": current_time
         }
 
         mycursor_w.execute(insert_query, insert_args)
         all_areas.append(area)
-        insert_args["pokemon_name"] = poke_names[str(area_poke[0])][config["dc-language"]]
-        insert_args["pokemon_type"] = poke_names[str(area_poke[0])]["type"]
-        insert_args["pokemon_shiny"] = poke_names[str(area_poke[0])]["shiny"]
+        insert_args["pokemon_name"] = poke_names[str(poke_id)][config["dc-language"]]
+        insert_args["pokemon_type"] = poke_names[str(poke_id)]["type"]
+        insert_args["pokemon_shiny"] = poke_names[str(poke_id)]["shiny"]
         areas_basic[str(area['id'])] = insert_args
 
     mydb_r.close()
@@ -894,7 +908,7 @@ def analyze_nest_data(config):
         for b_area in sorted_basic_areas.values():
             if config['dc-ignore-unnamed'] and (b_area["name"] == config["default_park_name"]):
                 continue
-            if float(b_area["pokemon_avg"]) < float(config["dc-min-spawns-for-post"]):
+            if float(b_area["pokemon_avg"]) < config["dc-min-spawns-for-post"]:
                 continue
             nest_time = datetime.utcfromtimestamp(
                 int(b_area["current_time"])).strftime('%Y-%m-%d %H:%M:%S')

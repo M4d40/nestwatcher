@@ -25,6 +25,7 @@ The script will use each config in the `custom_configs` folder, one after the ot
 | ------------- | ------------- |  ------------------------------ | ------------- |
 | `TIMESPAN_SINCE_CHANGE`      | Timespan which should be used to analyze      | `Integer`       | `16`       |
 | `MIN_POKEMON_NEST_COUNT`      | Minimum amount a poke must be spawned in nest area       | `Integer`       | `10`       |
+| `MIN_AVERAGEPOKEMON_NEST_COUNT`      | Minimum Average per hour a species must have in nest area       | `Float`       | `1`       |
 | `MIN_SPAWNPOINT_NEST_COUNT`      | Minimum amount a spawnpoint must be in nest area       | `Integer`       | `10`       |
 | `DELETE_OLD_NESTS`      | Delete old Nests in DB       | `Boolean`       | `True`       |
 | `EVENT_POKEMON`      | Filter out event pokemon from nest analyze       | `List`       | `[]`       |
