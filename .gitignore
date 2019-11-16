@@ -1,0 +1,8 @@
+# ignore existing OSM files
+OSM_DATA_*.json
+default.ini
+
+
+# Ignore the area folders
+area_data/*
+osm_data/*

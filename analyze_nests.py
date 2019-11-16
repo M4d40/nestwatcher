@@ -11,6 +11,7 @@ from collections import defaultdict, OrderedDict
 from datetime import datetime
 
 import argparse
+import csv
 import io
 import json
 import sys
@@ -37,6 +38,10 @@ try:
     from urllib import quote
 except ImportError:
     from urllib.parse import quote
+try:
+    FileNotFoundError
+except NameError:
+    FileNotFoundError = IOError
 
 
 DEFAULT_CONFIG = "default.ini"
@@ -45,7 +50,8 @@ POKE_NAMES_FILE = "poke_names.json"
 DISCORD_MAX_MSG = 2000 - 100  # -100 to be sure under the limit
 DISCORD_RATE_LIMIT = 1  # in second
 
-FILENAME = "OSM_DATA_{area}_{date}.json"
+FILENAME = "osm_data/OSM_DATA_{area}_{date}.json"
+PARKNAME_FILE = "area_data/{area}.csv"
 
 ### Overpass api data
 OSM_API = "https://overpass-api.de/api/interpreter"
@@ -144,7 +150,7 @@ WHERE (
         {spawn_id} IN ({spawnpoint_in})
     )
     AND
-    pokemon_id IN ({nest_mons})
+    pokemon_id IN {nest_mons}
     AND
     UNIX_TIMESTAMP({pokemon_timestamp}) >= {reset_time})
 GROUP BY pokemon_id
@@ -159,7 +165,7 @@ WHERE (
         {spawn_id} IN ({spawnpoint_in})
     )
     AND
-    pokemon_id IN ({nest_mons})
+    pokemon_id IN {nest_mons}
     AND
     UNIX_TIMESTAMP({pokemon_timestamp}) >= {reset_time})
 GROUP BY pokemon_id
@@ -496,6 +502,27 @@ def analyze_nest_data(config):
 
     print("Getting OSM Data...Complete (took {} seconds)".format(time.time()))
 
+    # Read the Area Data File
+    area_file_name = PARKNAME_FILE.format(area=config['area_name'])
+    area_file_data = dict()
+    try:
+        with io.open(area_file_name, mode='r', encoding=config["encoding"]) as area_file:
+            print("Area Data file found, we will use this! :D")
+            dict_reader = csv.DictReader(
+                area_file,
+                quotechar='"',
+                quoting=csv.QUOTE_MINIMAL,
+            )
+            for line in dict_reader:
+                area_file_data[line["osm_id"]] = {
+                        "name": line["name"],
+                        "center_lat": line["center_lat"],
+                        "center_lon": line["center_lon"],
+                    }
+    except FileNotFoundError:
+        print("No Area Data file found, we will create it at the end\n")
+
+    # Get Event Data
     event_pokes = set(config['event_poke'])
     if config['event_automation']:
         print("Event-Automation active, checking for active events")
@@ -509,17 +536,10 @@ def analyze_nest_data(config):
             print("Currently no active Event found, no event pokemon will be used")
             event_pokes = set()
 
-    nest_mons = ""
     if NEST_SPECIES_LIST:
-        filtered_species = set(NEST_SPECIES_LIST) - event_pokes
-        for i in filtered_species:
-            if nest_mons == "":
-                nest_mons = "'"+ str(i) +"'"
-            else:
-                nest_mons = nest_mons + ",'"+ str(i) +"'"
+        nest_mons = set(NEST_SPECIES_LIST) - event_pokes
     else:
-        nest_mons = "''"
-    #print(response.text)
+        nest_mons = set()
     print("##"*20)
 
     nodes = dict()
@@ -597,7 +617,10 @@ def analyze_nest_data(config):
         print("check relation:")
         print("idx: {}, _id: {}, rel: {}".format(idx, _id, relation))
         relation_name = config['default_park_name']
-        if "tags" in relation and "name" in relation["tags"]:
+        if str(_id) in area_file_data:
+            print("ID Found in Area File, will use data from area file")
+            relation_name = area_file_data[str(_id)]["name"]
+        elif "tags" in relation and "name" in relation["tags"]:
             relation_name = relation["tags"]["name"]
         _city_progress(idx, relations_len, "({}/{}) {}".format(
             idx,
@@ -622,26 +645,37 @@ def analyze_nest_data(config):
         inner_polygon = geometry.MultiPolygon(inner_members)
         final_polygon = None
         if outer_polygon and inner_polygon:
-            outmulti = []
-            for pol in outer_polygon:
-                for pol2 in inner_polygon:
-                    if pol.intersects(pol2)==True:
-                        # If they intersect, create a new polygon that is
-                        # essentially pol minus the intersection
-                        nonoverlap = (pol.symmetric_difference(pol2)).difference(pol2)
-                        outmulti.append(nonoverlap)
+            final_polygon = outer_polygon.symmetric_difference(inner_polygon).difference(inner_polygon)
 
-                    else:
-                        # Otherwise, just keep the initial polygon as it is.
-                        outmulti.append(pol)
+            #outmulti = []
 
-            final_polygon = geometry.MultiPolygon(outmulti)
+            #for pol in outer_polygon:
+            #    for pol2 in inner_polygon:
+            #        if pol.intersects(pol2)==True:
+            #            # If they intersect, create a new polygon that is
+            #            # essentially pol minus the intersection
+            #            nonoverlap = (pol.symmetric_difference(pol2)).difference(pol2)
+            #            outmulti.append(nonoverlap)
+
+            #        else:
+            #            # Otherwise, just keep the initial polygon as it is.
+            #            outmulti.append(pol)
+
+            #final_polygon = geometry.MultiPolygon(outmulti)
         elif outer_polygon:
             final_polygon = outer_polygon
         elif inner_polygon:
             final_polygon = inner_polygon
+
         area_shapeley_poly = final_polygon.convex_hull
-        area_center_point = area_shapeley_poly.centroid
+
+        if _id in area_file_data:
+            center_lat = float(area_file_data[str(_id)]["center_lat"])
+            center_lon = float(area_file_data[str(_id)]["center_lon"])
+            area_center_point = geometry.Point(center_lat, center_lon)
+        else:
+            area_center_point = area_shapeley_poly.centroid
+
         min_lon, min_lat, max_lon, max_lat = area_shapeley_poly.bounds
 
         area_poly_props = {
@@ -664,14 +698,15 @@ def analyze_nest_data(config):
         areas[_id] = feat
 
 
-
     # Check Ways
     all_areas = list()
     failed_nests = defaultdict(int)
     ways_len = len(ways)
     for (idx, (_id, way)) in enumerate(ways.items(), start=1):
         way_name = config['default_park_name']
-        if "tags" in way and "name" in way["tags"]:
+        if str(_id) in area_file_data:
+            way_name = area_file_data[str(_id)]["name"]
+        elif "tags" in way and "name" in way["tags"]:
             way_name = way["tags"]["name"]
         _city_progress(idx, ways_len, "({}/{}) {}".format(
             idx,
@@ -685,7 +720,12 @@ def analyze_nest_data(config):
             continue
         way_poly = geometry.Polygon(way_points)
         way_shapeley_poly = way_poly.convex_hull
-        way_center_point = way_shapeley_poly.centroid
+        if str(_id) in area_file_data:
+            center_lat = float(area_file_data[str(_id)]["center_lat"])
+            center_lon = float(area_file_data[str(_id)]["center_lon"])
+            way_center_point = geometry.Point(center_lat, center_lon)
+        else:
+            way_center_point = way_shapeley_poly.centroid
         min_lon, min_lat, max_lon, max_lat = way_shapeley_poly.bounds
         way_poly_props = {
             "name": way_name,
@@ -815,6 +855,7 @@ def analyze_nest_data(config):
                 nest_query = NEST_SELECT_QUERY.replace(
                     "UNIX_TIMESTAMP({pokemon_timestamp})",
                     "{pokemon_timestamp}")
+
         query = nest_query.format(
             db_name=config['db_r_name'],
             db_pokemon_table=config['db_pokemon'],
@@ -822,7 +863,7 @@ def analyze_nest_data(config):
             pokestop_in=pokestop_in,
             spawn_id=config['db_pokemon_spawnid'],
             spawnpoint_in=spawnpoint_in,
-            nest_mons=nest_mons,
+            nest_mons=str(tuple(nest_mons)),
             reset_time=str(reset_time)
         )
 
@@ -872,11 +913,16 @@ def analyze_nest_data(config):
             "lon": float(area_center_point.y),
             "pokemon_id": int(poke_id),
             "type": 0,
-            "pokemon_count": int(poke_count),
-            "pokemon_avg": poke_avg,
+            "pokemon_count": float(poke_count),
+            "pokemon_avg": float(poke_avg),
             "current_time": current_time
         }
-
+        area_file_data[str(area['id'])] = {
+            "name": area["properties"]["name"],
+            "center_lat": float(area_center_point.x),
+            "center_lon": float(area_center_point.y),
+        }
+        
         mycursor_w.execute(insert_query, insert_args)
         all_areas.append(area)
         insert_args["pokemon_name"] = poke_names[str(poke_id)][config["dc-language"]]
@@ -994,6 +1040,27 @@ def analyze_nest_data(config):
         print('write geojson')
         file_.write(dumps(FeatureCollection(all_areas), indent=4))
         print("geoJSON saved successfully")
+
+    with io.open(area_file_name, mode='w', encoding=config["encoding"]) as area_file:
+        print("writing area data file...")
+        fieldnames = [u"name", u"center_lat", u"center_lon", u"osm_id"]
+        dict_writer = csv.DictWriter(
+            area_file,
+            fieldnames=fieldnames,
+            quotechar='"',
+            quoting=csv.QUOTE_MINIMAL,
+        )
+        dict_writer.writeheader()
+        # FIME ONLY WORKS ON Python3 str, unicode with write
+        for a_id, a_data in area_file_data.items():
+            dict_writer.writerow({
+                "osm_id": a_id,
+                "name": u"" + a_data["name"],
+                "center_lat": a_data["center_lat"],
+                "center_lon": a_data["center_lon"],
+            })
+        print("area data file saved successfully")
+
 
 
 if __name__ == "__main__":
