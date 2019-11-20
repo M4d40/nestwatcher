@@ -4,7 +4,7 @@
 Example usage:
 serebii = SerebiiPokemonGo()
 last_events = serebii.get_last_x_events(5)
-active_event = serebii.get_active_event())
+active_events = serebii.get_active_events()
 """
 
 from datetime import datetime
@@ -138,7 +138,8 @@ class SerebiiPokemonGo(object):
         """ Return last event. """
         return self.get_last_x_events(1)[0]
 
-    def get_active_event(self):
-        """ Return active event, if non active return None. """
-        last_event = self.get_last_x_events(1)[0]
-        return last_event if last_event.active else None
+    def get_active_events(self):
+        """ Return a list of active events. """
+        last_events = self.get_last_x_events(10)
+        active_events = set(event for event in last_events if event.active)
+        return active_events

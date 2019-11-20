@@ -24,7 +24,6 @@ from pymysql import connect
 from geojson import (
     Feature,
     FeatureCollection,
-    Polygon,
     dumps
 )
 from serebii import SerebiiPokemonGo
@@ -459,8 +458,8 @@ def analyze_nest_data(config):
         progress(count, total, status)
     start_time = time.time()
     osm_file_name = FILENAME.format(
-            area=config['area_name'],
-            date=config['osm_date'])
+        area=config['area_name'],
+        date=config['osm_date'])
     try:
         with io.open(osm_file_name, mode='r', encoding=config["encoding"]) as osm_file:
             print("OSM Data file found, we will use this! :D")
@@ -515,10 +514,10 @@ def analyze_nest_data(config):
             )
             for line in dict_reader:
                 area_file_data[line["osm_id"]] = {
-                        "name": line["name"],
-                        "center_lat": line["center_lat"],
-                        "center_lon": line["center_lon"],
-                    }
+                    "name": line["name"],
+                    "center_lat": line["center_lat"],
+                    "center_lon": line["center_lon"],
+                }
     except FileNotFoundError:
         print("No Area Data file found, we will create it at the end\n")
 
@@ -527,14 +526,15 @@ def analyze_nest_data(config):
     if config['event_automation']:
         print("Event-Automation active, checking for active events")
         serebii = SerebiiPokemonGo()
-        active_event = serebii.get_active_event()
-        if active_event:
-            print("Active Event found:")
-            print(active_event)
-            event_pokes = set(active_event.pokemon)
+        active_events = serebii.get_active_events()
+        event_pokes = set()
+        if active_events:
+            print("Active Events found:")
+            print(active_events)
+            for event in active_events:
+                event_pokes.update(event.pokemon)
         else:
             print("Currently no active Event found, no event pokemon will be used")
-            event_pokes = set()
 
     if NEST_SPECIES_LIST:
         nest_mons = set(NEST_SPECIES_LIST) - event_pokes
@@ -611,11 +611,8 @@ def analyze_nest_data(config):
         locale = json.load(loc_file)
     areas = dict()
     areas_basic = dict()
-    all_relations = list()
     relations_len = len(relations)
     for (idx, (_id, relation)) in enumerate(relations.items(), start=1):
-        print("check relation:")
-        print("idx: {}, _id: {}, rel: {}".format(idx, _id, relation))
         relation_name = config['default_park_name']
         if str(_id) in area_file_data:
             print("ID Found in Area File, will use data from area file")
@@ -645,23 +642,8 @@ def analyze_nest_data(config):
         inner_polygon = geometry.MultiPolygon(inner_members)
         final_polygon = None
         if outer_polygon and inner_polygon:
-            final_polygon = outer_polygon.symmetric_difference(inner_polygon).difference(inner_polygon)
-
-            #outmulti = []
-
-            #for pol in outer_polygon:
-            #    for pol2 in inner_polygon:
-            #        if pol.intersects(pol2)==True:
-            #            # If they intersect, create a new polygon that is
-            #            # essentially pol minus the intersection
-            #            nonoverlap = (pol.symmetric_difference(pol2)).difference(pol2)
-            #            outmulti.append(nonoverlap)
-
-            #        else:
-            #            # Otherwise, just keep the initial polygon as it is.
-            #            outmulti.append(pol)
-
-            #final_polygon = geometry.MultiPolygon(outmulti)
+            final_polygon = outer_polygon.symmetric_difference(
+                inner_polygon).difference(inner_polygon)
         elif outer_polygon:
             final_polygon = outer_polygon
         elif inner_polygon:
@@ -748,7 +730,6 @@ def analyze_nest_data(config):
 
     # NOW CHECK ALL AREAS ONE AFTER ANOTHER
     areas_len = len(areas)
-    print("Let's Check all the areas we got:")
     for (idx, (_id, area)) in enumerate(areas.items(), start=1):
         area_points = area["geometry"]
         area_prop = area["properties"]
@@ -881,8 +862,8 @@ def analyze_nest_data(config):
 
         # (Area_poke/timespan)*(24/scan_hours)
         poke_avg = round(
-                (poke_count / float(config['timespan'])) * (
-                    24.00 / float(config['scan_hours'])) , 2 )
+            (poke_count / float(config['timespan'])) * (
+                24.00 / float(config['scan_hours'])), 2)
 
         _city_progress(idx, areas_len, "({}/{}) {}".format(
             idx,
@@ -922,7 +903,7 @@ def analyze_nest_data(config):
             "center_lat": float(area_center_point.x),
             "center_lon": float(area_center_point.y),
         }
-        
+
         mycursor_w.execute(insert_query, insert_args)
         all_areas.append(area)
         insert_args["pokemon_name"] = poke_names[str(poke_id)][config["dc-language"]]
@@ -939,16 +920,20 @@ def analyze_nest_data(config):
         print("All Nests Added ({}):\n############".format(len(all_areas)))
     else:
         print("No Nests Added")
-    print("No nest reasons:\n############") if failed_nests else "No false positive Parks"
-    for (key, value) in failed_nests.items():
-        print("{}: {}".format(key, value))
+    if failed_nests:
+        print("No nest reasons:\n############")
+        for (key, value) in failed_nests.items():
+            print("{}: {}".format(key, value))
+    else:
+        print("No false positive Parks")
 
     def discord_webhook():
+        """ Send nest data to discord. """
         # Sort basic areas
         sorted_basic_areas = OrderedDict(sorted(
-                                areas_basic.items(),
-                                key=lambda kv: kv[1][config["dc-sort-by"]],
-                                reverse=config["dc-sort-reverse"]))
+            areas_basic.items(),
+            key=lambda kv: kv[1][config["dc-sort-by"]],
+            reverse=config["dc-sort-reverse"]))
         content = defaultdict(str)
         content_page = 0
         for b_area in sorted_basic_areas.values():
@@ -965,8 +950,8 @@ def analyze_nest_data(config):
             park_name = b_area["name"]
             g_maps = "[Google Maps]({})".format(map_ref)
             park_name_g = u"[{name}]({map_ref})".format(
-                    name=park_name,
-                    map_ref=map_ref)
+                name=park_name,
+                map_ref=map_ref)
 
             poke_shiny = ""
             if b_area["pokemon_shiny"]:
@@ -994,14 +979,15 @@ def analyze_nest_data(config):
                 content[content_page] += text
 
         def send_webhook(payload):
+            """ Send payload to webhook. """
             webhooks = json.loads(config["dc-webhook"])
             if not isinstance(webhooks, list):
                 webhooks = [webhooks]
-            for wh in webhooks:
+            for webhook in webhooks:
                 result = requests.post(
-                     wh,
-                     data=json.dumps(payload),
-                     headers={"Content-Type": "application/json"})
+                    webhook,
+                    data=json.dumps(payload),
+                    headers={"Content-Type": "application/json"})
 
                 if result.status_code > 300:
                     print("Error while sending Webhook")
@@ -1051,7 +1037,7 @@ def analyze_nest_data(config):
             quoting=csv.QUOTE_MINIMAL,
         )
         dict_writer.writeheader()
-        # FIME ONLY WORKS ON Python3 str, unicode with write
+        # This ONLY WORKS on Python3 str, unicode with write
         for a_id, a_data in area_file_data.items():
             dict_writer.writerow({
                 "osm_id": a_id,
