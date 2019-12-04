@@ -4,5 +4,5 @@ default.ini
 
 
 # Ignore the area folders
-area_data/*
-osm_data/*
+area_data/*.csv
+osm_data/*.json
