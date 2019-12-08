@@ -6,6 +6,6 @@ nest_conf_folder="custom_configs"
 for nest_conf in "$nest_conf_folder"/*
 do
   echo $nest_conf
-  python analyze_nests.py -c $nest_conf
+  python3 analyze_nests.py -c $nest_conf
 done
 #deactivate

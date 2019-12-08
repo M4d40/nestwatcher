@@ -1,12 +1,22 @@
 # PMSFnestScript
 Script to analyze scanned Data from Scanner Projects (like RDM or MAD) in combination with Data from OSM (Open Street Map)
 
+### INSTALL
+To install requirements:<br />
+`pip3 install -r requirements.txt`<br />
+<br />
+
+_It is best to use Virtual Environments for python projects, if you don't know what it is, may be one of the following will help:_<br />
+https://www.devdungeon.com/content/python-virtual-environments-tutorial<br />
+https://docs.python.org/3/library/venv.html<br />
+
+
 ## USAGE
 Edit and rename the `default.ini.example` to `default.ini`
 
 If you want to use your own config, start it with the config argument:
 
-`python analyze_nests.py -c myconfig.ini`<br />
+`python3 analyze_nests.py -c myconfig.ini`<br />
 
 You only need to add attributes to your custom config that needs to be changed.<br />
 It will use the default attributes from `default.ini` if an attribute is missing in your config.<br />
