@@ -2,6 +2,7 @@
 """ Module to scrap events from serebii.
 
 Example usage:
+from serebii import SerebiiPokemonGo
 serebii = SerebiiPokemonGo()
 last_events = serebii.get_last_x_events(5)
 active_events = serebii.get_active_events()
@@ -15,17 +16,42 @@ import requests
 from bs4 import BeautifulSoup
 
 
+DEFAULT_YEAR = 2019
+SPECIAL_DATETIMES = {
+    "Holiday 2019": "December 24th 2019 - January 1st 2020"
+}
 class SerebiiDateUtils(object):
     """ Helper class for serebii dates. """
     def __init__(self, time_):
-        self.year = 0
+        self.year = DEFAULT_YEAR
         self.month = 13
-        self.start, self.end = time_.split("-")
+        if "local time" in time_:
+            self.start = time_
+            self.end = time_
+        else:
+            self.start, self.end = time_.split("-")
+
+    def _analyze_event_singleday(self):
+        # December 28th 11:00-19:00 local time
+        event_day = self.start.replace("local time", "").strip()
+        event_start, event_end_h = event_day.split("-")
+        self.start = parse(event_start)
+        self.year = self.start.year
+        self.month = self.start.month
+        end_str = "{} {} {} {}".format(
+            self.start.day,
+            self.month,
+            self.year,
+            event_end_h
+        )
+        self.end = parse(end_str)
 
     def _analyze_event_end(self):
         """ Analyze end of event. """
         if len(self.end.split()) == 3:
             self.end = parse(self.end)
+            if self.end.year < DEFAULT_YEAR:
+                self.end = self.end.replace(year=DEFAULT_YEAR)
             self.year = self.end.year
             self.month = self.end.month
         elif len(self.end.split()) == 2:
@@ -38,10 +64,17 @@ class SerebiiDateUtils(object):
             self.year = year
             self.end = parse(end_str)
 
-    def _analyze_event_start(self):
+    def _analyze_event_start(self, name):
         """ Analyze start of event. """
-        if len(self.start.split()) == 3:
+
+        if name in SPECIAL_DATETIMES:
+            self.start, self.end = SPECIAL_DATETIMES[name].split("-")
+        if self.start == self.end:
+            self._analyze_event_singleday()
+        elif len(self.start.split()) == 3:
             self.start = parse(self.start)
+            if self.start.year < DEFAULT_YEAR:
+                self.start = self.start.replace(year=DEFAULT_YEAR)
             self.year = self.start.year
             self.month = self.start.month
             self._analyze_event_end()
@@ -51,9 +84,9 @@ class SerebiiDateUtils(object):
             self._analyze_event_end()
             self.start = parse(self.start + " " + str(self.year))
 
-    def analyze_dates(self):
+    def analyze_dates(self, name):
         """ Analyze start and end of event. """
-        self._analyze_event_start()
+        self._analyze_event_start(name)
         return (self.start, self.end)
 
     def is_active(self):
@@ -106,7 +139,7 @@ class SerebiiPokemonGo(object):
             if e_time.text.count("-") != 1:
                 print("No valid Event-Time - or no real Event, so we don't use event_pokes")
             s_utils = SerebiiDateUtils(e_time.text)
-            event_start, event_end = s_utils.analyze_dates()
+            event_start, event_end = s_utils.analyze_dates(event_name)
             event_active = s_utils.is_active()
 
             event_href = event.find("a", href=True, text=True)

@@ -370,6 +370,9 @@ def create_config(config_path):
     config['dc-locale-file'] = config_raw.get(
         'Discord',
         'LOCALE_FILE')
+    config['dc-map-link'] = config_raw.get(
+        'Discord',
+        'MAP_LINK')
     config['encoding'] = config_raw.get(
         'Other',
         'ENCODING')
@@ -943,15 +946,26 @@ def analyze_nest_data(config):
                 continue
             nest_time = datetime.utcfromtimestamp(
                 int(b_area["current_time"])).strftime('%Y-%m-%d %H:%M:%S')
-            map_ref = '<https://maps.google.com/maps?q={lon:.5f},{lat:.5f}>'.format(
+            park_name = b_area["name"]
+
+            g_map_ref = '<https://maps.google.com/maps?q={lon:.5f},{lat:.5f}>'.format(
                 lat=b_area["lat"],
                 lon=b_area["lon"]
                 )
-            park_name = b_area["name"]
-            g_maps = "[Google Maps]({})".format(map_ref)
+            g_maps = "[Google Maps]({})".format(g_map_ref)
             park_name_g = u"[{name}]({map_ref})".format(
                 name=park_name,
-                map_ref=map_ref)
+                map_ref=g_map_ref)
+
+            custom_map_link = '<{map_link}>'.format(
+                map_link=config["dc-map-link"])
+            custom_map_ref = custom_map_link.format(
+                lat=b_area["lat"],
+                lon=b_area["lon"])
+            m_maps = "[Map Link]({})".format(custom_map_ref)
+            park_name_m = u"[{name}]({map_ref})".format(
+                name=park_name,
+                map_ref=custom_map_ref)
 
             poke_shiny = ""
             if b_area["pokemon_shiny"]:
@@ -963,6 +977,7 @@ def analyze_nest_data(config):
             text = (config["dc-text"] + u"\n").format(
                 park_name=park_name,
                 park_name_g=park_name_g,
+                park_name_m=park_name_m,
                 poke_id=b_area["pokemon_id"],
                 poke_name=b_area["pokemon_name"],
                 poke_shiny=poke_shiny,
@@ -970,7 +985,8 @@ def analyze_nest_data(config):
                 poke_type="/".join(b_area["pokemon_type"]),
                 poke_type_emoji="/".join(poke_type_emojis),
                 time=nest_time,
-                g_maps=g_maps
+                g_maps=g_maps,
+                m_maps=m_maps
             )
             if len(content[content_page] + text) < DISCORD_MAX_MSG:
                 content[content_page] += text

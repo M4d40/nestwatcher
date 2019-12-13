@@ -111,8 +111,9 @@ The script will use each config in the `custom_configs` folder, one after the ot
 | `SORT_REVERSE`      | For reversing the order: `True` | `False`     | `Boolean`       | `False`       |
 | `IGNORE_UNNAMED`      | Ignore Parks without Names       | `Boolean`       | `True`       |
 | `TITLE`      | Title which will be written before the nest list <br /> Available Blocks: `{park_name}`     | `String`        | `**This is the Nest report for {area_name}**`       |
-| `TEXT`      | Text which will be used to send to Discord <br /> Available Blocks: `{park_name}`, `{poke_name_g}`, `{poke_shiny}`,`{poke_type}`,`{poke_type_emoji}`,`{poke_avg}`, `{g_maps}`, `{time}`     | `String`        | `**{park_name_g}**: {poke_name} {poke_shiny} ({poke_type_emoji}) => {poke_avg} per hour`       |
+| `TEXT`      | Text which will be used to send to Discord <br /> Available Blocks: `{park_name}`, `{park_name_g}`, `{park_name_m}`, `{poke_name}`, `{poke_shiny}`,`{poke_type}`,`{poke_type_emoji}`,`{poke_avg}`, `{g_maps}`, `{time}`     | `String`        | `**{park_name_g}**: {poke_name} {poke_shiny} ({poke_type_emoji}) => {poke_avg} per hour`       |
 | `LOCALE_FILE`      | Locale file which should be used (for example custom emojis)     | `String`        | `locale.json`       |
+| `MAP_LINK`      | Link to your map, will be used in TEXT `poke_name_m`     | `String`        | `https://my-map-domain.de/?lat={lon:.5f}&lon={lat:.5f}&zoom=16`       |
 
 
 ### [Other]
