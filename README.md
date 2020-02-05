@@ -63,15 +63,7 @@ The script will use each config in the `custom_configs` folder, one after the ot
 | `PASSWORD`      | Password of Username for Database       | `String`       | `my_password`       |
 | `PORT`      | Port of the Database       | `Integer`       | `3307`       |
 | `CHARSET`      | Charset of the Database       | `String`       | `utf8mb4`       |
-| `TABLE_POKEMON`      | Name of the Pokemon Table       | `String`       | `pokemon`       |
-| `TABLE_POKEMON_SPAWNID`      | Name of the Spawn id Column in pokemon table       | `String`       | `spawn_id`       |
-| `TABLE_POKEMON_TIMESTAMP`      | Name of the Timestamp Column in pokemon table       | `String`       | `first_seen_timestamp`       |
-| `TABLE_POKESTOP`      | Name of the Pokestop Table       | `String`       | `pokestop`       |
-| `TABLE_SPAWNPOINT`      | Name of the Spawnpoint Table       | `String`       | `spawnpoint`       |
-| `TABLE_SPAWNPOINT_ID`      | Name of the Spawnpoint id Column in spawnpoint table       | `String`       | `id`       |
-| `TABLE_SPAWNPOINT_LAT`      | Name of the Spawnpoint Latitude Column in spawnpoint table       | `String`       | `lat`       |
-| `TABLE_SPAWNPOINT_LON`      | Name of the Spawnpoint Longitude Column in spawnpoint table       | `String`       | `lon`       |
-| `USE_UNIX_TIMESTAMP`      | Use Unix Timestamp in SQL Queries<br /> (only needed with MAD)       | `Boolean`       | `False`       |
+| `SCANNER_SCHEMA`      | The kinf of Scanner you're using. Can be either `mad` or `rdm`       | `String`       | `rdm`       |
 
 
 ### [DB Write]
