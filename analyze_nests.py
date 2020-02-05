@@ -253,6 +253,9 @@ def create_config(config_path):
     config['db_r_name'] = config_raw.get(
         'DB Read',
         'NAME')
+    config['db_schema'] = config_raw.get(
+        'DB Read',
+        'SCANNER_SCHEMA')
     config['db_r_user'] = config_raw.get(
         'DB Read',
         'USER')
@@ -265,33 +268,6 @@ def create_config(config_path):
     config['db_r_charset'] = config_raw.get(
         'DB Read',
         'CHARSET')
-    config['db_pokemon'] = config_raw.get(
-        'DB Read',
-        'TABLE_POKEMON')
-    config['db_pokemon_spawnid'] = config_raw.get(
-        'DB Read',
-        'TABLE_POKEMON_SPAWNID')
-    config['db_pokemon_timestamp'] = config_raw.get(
-        'DB Read',
-        'TABLE_POKEMON_TIMESTAMP')
-    config['db_pokestop'] = config_raw.get(
-        'DB Read',
-        'TABLE_POKESTOP')
-    config['db_spawnpoint'] = config_raw.get(
-        'DB Read',
-        'TABLE_SPAWNPOINT')
-    config['db_spawnpoint_id'] = config_raw.get(
-        'DB Read',
-        'TABLE_SPAWNPOINT_ID')
-    config['db_spawnpoint_lat'] = config_raw.get(
-        'DB Read',
-        'TABLE_SPAWNPOINT_LAT')
-    config['db_spawnpoint_lon'] = config_raw.get(
-        'DB Read',
-        'TABLE_SPAWNPOINT_LON')
-    config['use_unix_timestamp'] = config_raw.getboolean(
-        'DB Read',
-        'USE_UNIX_TIMESTAMP')
     config['db_w_host'] = config_raw.get(
         'DB Write',
         'HOST')
@@ -383,7 +359,28 @@ def create_config(config_path):
         'Other',
         'OSM_DATE')
 
-
+    if config['db_schema'] == "mad":
+        config['db_pokemon'] = "pokemon"
+        config['db_pokemon_spawnid'] = "spawnpoint_id"
+        config['db_pokemon_timestamp'] = "disappear_time"
+        config['db_pokestop'] = "pokestop"
+        config['db_spawnpoint'] = "trs_spawn"
+        config['db_spawnpoint_id'] = "spawnpoint"
+        config['db_spawnpoint_lat'] = "latitude"
+        config['db_spawnpoint_lon'] = "longitude"
+        config['use_unix_timestamp'] = True
+        config['pokestop_pokemon'] = False
+    elif config['db_schema'] == "rdm":
+        config['db_pokemon'] = "pokemon"
+        config['db_pokemon_spawnid'] = "spawn_id"
+        config['db_pokemon_timestamp'] = "first_seen_timestamp"
+        config['db_pokestop'] = "pokestop"
+        config['db_spawnpoint'] = "spawnpoint"
+        config['db_spawnpoint_id'] = "id"
+        config['db_spawnpoint_lat'] = "lat"
+        config['db_spawnpoint_lon'] = "lon"
+        config['use_unix_timestamp'] = False
+        
     return config
 
 
