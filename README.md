@@ -39,7 +39,7 @@ The script will use each config in the `custom_configs` folder, one after the ot
 | `MIN_SPAWNPOINT_NEST_COUNT`      | Minimum amount a spawnpoint must be in nest area       | `Integer`       | `10`       |
 | `DELETE_OLD_NESTS`      | Delete old Nests in DB       | `Boolean`       | `True`       |
 | `EVENT_POKEMON`      | Filter out event pokemon from nest analyze       | `List`       | `[]`       |
-| `POKESTOP_POKEMON`      | Use also Pokemon from pokestops (ONLY USE THIS WITH RDM!)       | `Boolean`       | `True`       |
+| `POKESTOP_POKEMON`      | Use also Pokemon from pokestops (Only works with RDM)       | `Boolean`       | `True`       |
 | `ANALYZE_MULTIPOLYGONS`      | Analyze only Multipolygons<br /> \[only needed if not all Nests are scanned]<br /> (Use an extra config for each park, to not get limited by API!)       | `Boolean`       | `False`       |
 
 
@@ -63,7 +63,7 @@ The script will use each config in the `custom_configs` folder, one after the ot
 | `PASSWORD`      | Password of Username for Database       | `String`       | `my_password`       |
 | `PORT`      | Port of the Database       | `Integer`       | `3307`       |
 | `CHARSET`      | Charset of the Database       | `String`       | `utf8mb4`       |
-| `SCANNER_SCHEMA`      | The kinf of Scanner you're using. Can be either `mad` or `rdm`       | `String`       | `rdm`       |
+| `SCANNER_SCHEMA`      | The kind of Scanner you're using. Can be either `mad` or `rdm`       | `String`       | `rdm`       |
 
 
 ### [DB Write]
