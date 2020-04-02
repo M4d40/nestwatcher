@@ -28,19 +28,24 @@ class SerebiiDateUtils(object):
         if "local time" in time_:
             self.start = time_
             self.end = time_
+        elif "-" not in time_:
+            self.start = self.end = time_
         else:
             self.start, self.end = time_.split("-")
 
     def _analyze_event_singleday(self):
-        # December 28th 11:00-19:00 local time
         event_day = self.start.replace("local time", "").strip()
-        event_start, event_end_h = event_day.split("-")
+        if "-" in event_day:
+            event_start, event_end_h = event_day.split("-")
+        else:  #seems like a whole day event
+            event_start = event_day
+            event_end_h = "23:59"
         self.start = parse(event_start)
         self.year = self.start.year
         self.month = self.start.month
         end_str = "{} {} {} {}".format(
-            self.start.day,
             self.month,
+            self.start.day,
             self.year,
             event_end_h
         )
@@ -136,8 +141,6 @@ class SerebiiPokemonGo(object):
             event_name = e_name.text
 
             # Parse event start and end
-            if e_time.text.count("-") != 1:
-                print("No valid Event-Time - or no real Event, so we don't use event_pokes")
             s_utils = SerebiiDateUtils(e_time.text)
             event_start, event_end = s_utils.analyze_dates(event_name)
             event_active = s_utils.is_active()
