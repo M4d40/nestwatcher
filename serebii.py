@@ -28,6 +28,8 @@ class SerebiiDateUtils(object):
         if "local time" in time_:
             self.start = time_
             self.end = time_
+        elif " to " in time_:
+            self.start, self.end = time_.split(" to ")
         elif "-" not in time_:
             self.start = self.end = time_
         else:
