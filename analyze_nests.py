@@ -349,6 +349,9 @@ def create_config(config_path):
     config['osm_date'] = config_raw.get(
         'Other',
         'OSM_DATE')
+    config['osm_date_4name'] = config_raw.get(
+        'Other',
+        'OSM_DATE_4NAME')
 
     if config['db_schema'] == "mad":
         config['db_pokemon'] = "pokemon"
@@ -492,71 +495,79 @@ def analyze_nest_data(config):
         return
 
     # This is where will will grab a name file for today
-    osm_4name_file_name = FILENAME.format(
-        area=config['area_name']+'_NAMES',
-        date=str(datetime.date.today())+'T00:00:00Z')
-    try:
-        with io.open(osm_4name_file_name, mode='r', encoding=config["encoding"]) as osm_4name_file:
-            print("OSM Name Data file found with today's date, we will use this! :D")
-            name_json = json.loads(osm_4name_file.read())
-    except IOError:
-        print("No OSM Name Data file found with today's date, will get the data now.\n")
-        name_url = osm_uri(
-            config['p1_lat'],
-            config['p1_lon'],
-            config['p2_lat'],
-            config['p2_lon'],
-            str(datetime.date.today())+'T00:00:00Z',
-            relations=config['analyze_multipolygons'],
-        )
-        print("{} Overpass url:".format(config["area_name"]))
-        print(name_url)
-        print("Getting OSM Data...")
-        osm_name_session = requests.Session()
+    if config['osm_date_4name'] != "NONE":
+        if config['osm_date_4name'] != "TODAY":
+            name_date=config["osm_date_4name"]
+        else:
+            name_date=str(datetime.date.today())+'T00:00:00Z'
 
-        response = osm_name_session.get(name_url)
-        response.raise_for_status()
-        name_json = response.json()
+        osm_4name_file_name = FILENAME.format(
+            area=config['area_name']+'_NAMES',
+            date=name_date)
+        try:
+            with io.open(osm_4name_file_name, mode='r', encoding=config["encoding"]) as osm_4name_file:
+                print("OSM Name Data file found with today's date, we will use this! :D")
+                name_json = json.loads(osm_4name_file.read())
+        except IOError:
+            print("No OSM Name Data file found with today's date, will get the data now.\n")
+            name_url = osm_uri(
+                config['p1_lat'],
+                config['p1_lon'],
+                config['p2_lat'],
+                config['p2_lon'],
+                str(datetime.date.today())+'T00:00:00Z',
+                relations=config['analyze_multipolygons'],
+            )
+            print("{} Overpass url:".format(config["area_name"]))
+            print(name_url)
+            print("Getting OSM Data...")
+            osm_name_session = requests.Session()
 
-        if not name_json["elements"]:
-            print("\nDid not get any Data from the API:")
-            if "remark" in name_json:
-                print(name_json["remark"])
+            response = osm_name_session.get(name_url)
+            response.raise_for_status()
+            name_json = response.json()
+
+            if not name_json["elements"]:
+                print("\nDid not get any Data from the API:")
+                if "remark" in name_json:
+                    print(name_json["remark"])
+                return
+
+            print("Removing old Name Data files")
+            for file in os.listdir("osm_data/"):
+                if file.startswith("OSM_DATA_"+config['area_name']+"_NAMES_"):
+                    os.remove(os.path.join("osm_data/",file))
+
+            with io.open(osm_4name_file_name, mode='w', encoding=config["encoding"]) as osm_4name_file:
+                osm_4name_file.write(response.text)
+                print("OSM Name Data received and is saved in OSM Data file")
+
+        if not name_json:
+            print("Error getting osm name data from file")
+            print(name_json)
             return
 
-        print("Removing old Name Data files")
-        for file in os.listdir("osm_data/"):
-            if file.startswith("OSM_DATA_"+config['area_name']+"_NAMES_"):
-                os.remove(os.path.join("osm_data/",file))
+        # Check if any of the unnamed parks have names in the new file
+        found_new_name = False
+        for element in nest_json['elements']:
+            if element["type"] != "node":
+                tags = element["tags"]
+                if "name" not in tags:
+                    for element_name in name_json['elements']:
+                        if element_name["type"] != "node" and element["id"] == element_name["id"] and "name" in element_name["tags"]:
+                            print("We found a name in the OSM Name data: {}".format(element_name["tags"]["name"]))
+                            found_new_name = True
+                            tags["name"] = element_name["tags"]["name"]
 
-        with io.open(osm_4name_file_name, mode='w', encoding=config["encoding"]) as osm_4name_file:
-            osm_4name_file.write(response.text)
-            print("OSM Name Data received and is saved in OSM Data file")
-
-    if not name_json:
-        print("Error getting osm name data from file")
-        print(name_json)
-        return
-
-    # Check if any of the unnamed parks have names in the new file
-    found_new_name = False
-    for element in nest_json['elements']:
-        if element["type"] != "node":
-            tags = element["tags"]
-            if "name" not in tags:
-                for element_name in name_json['elements']:
-                    if element_name["type"] != "node" and element["id"] == element_name["id"] and "name" in element_name["tags"]:
-                        print("We found a name in the OSM Name data: {}".format(element_name["tags"]["name"]))
-                        found_new_name = True
-                        tags["name"] = element_name["tags"]["name"]
-
-    # If there are new names, write the updated JSON to the data file
-    if found_new_name:
-        with io.open(osm_file_name, mode='w', encoding=config["encoding"]) as osm_file:
-            osm_file.write(json.dumps(nest_json, indent=4))
-            print("OSM Data file updated with new names")
+        # If there are new names, write the updated JSON to the data file
+        if found_new_name:
+            with io.open(osm_file_name, mode='w', encoding=config["encoding"]) as osm_file:
+                osm_file.write(json.dumps(nest_json, indent=4))
+                print("OSM Data file updated with new names")
+        else:
+            print("No new names found")
     else:
-        print("No new names found")
+        print("Skipping the auto name check")
 
     print("Getting OSM Data...Complete (took {:.2f} minutes)".format((time.time() - start_time)/60))
 
@@ -579,7 +590,7 @@ def analyze_nest_data(config):
                 }
 
         # If there was a new name, updated the CSV file too
-        if found_new_name:
+        if config['osm_date_4name'] != "NONE" and found_new_name:
             print("Adding new names to the CSV file")
             for a_id, a_data in area_file_data.items():
                 if a_data["name"] == config['default_park_name']:
