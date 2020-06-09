@@ -1,3 +1,4 @@
+#!/bin/bash
 # the comments only needed if you use a virtual environment
 #. /path/to/your/venv/bin/activate
 
