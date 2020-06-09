@@ -8,16 +8,7 @@ Refactored by M4d40
 
 
 from collections import defaultdict, OrderedDict
-from datetime import datetime
-
-import argparse
-import csv
-import io
-import json
-import sys
-import time
-
-import requests
+import datetime, argparse, csv, io, json, sys, time, requests, os
 
 from shapely import geometry
 from pymysql import connect
@@ -485,7 +476,8 @@ def analyze_nest_data(config):
         response = osm_session.get(nest_url)
         response.raise_for_status()
         nest_json = response.json()
-        print(nest_json)
+        if config['verbose']:
+            print(nest_json)
         # global nest_json
         if not nest_json["elements"]:
             print("\nDid not get any Data from the API:")
@@ -502,7 +494,74 @@ def analyze_nest_data(config):
         print(nest_json)
         return
 
-    print("Getting OSM Data...Complete (took {} seconds)".format(time.time()))
+    # This is where will will grab a name file for today
+    osm_4name_file_name = FILENAME.format(
+        area=config['area_name']+'_NAMES',
+        date=str(datetime.date.today())+'T00:00:00Z')
+    try:
+        with io.open(osm_4name_file_name, mode='r', encoding=config["encoding"]) as osm_4name_file:
+            print("OSM Name Data file found with today's date, we will use this! :D")
+            name_json = json.loads(osm_4name_file.read())
+    except IOError:
+        print("No OSM Name Data file found with today's date, will get the data now.\n")
+        name_url = osm_uri(
+            config['p1_lat'],
+            config['p1_lon'],
+            config['p2_lat'],
+            config['p2_lon'],
+            str(datetime.date.today())+'T00:00:00Z',
+            relations=config['analyze_multipolygons'],
+        )
+        print("{} Overpass url:".format(config["area_name"]))
+        print(name_url)
+        print("Getting OSM Data...")
+        osm_name_session = requests.Session()
+
+        response = osm_name_session.get(name_url)
+        response.raise_for_status()
+        name_json = response.json()
+
+        if not name_json["elements"]:
+            print("\nDid not get any Data from the API:")
+            if "remark" in name_json:
+                print(name_json["remark"])
+            return
+
+        print("Removing old Name Data files")
+        for file in os.listdir("osm_data/"):
+            if file.startswith("OSM_DATA_"+config['area_name']+"_NAMES_"):
+                os.remove(os.path.join("osm_data/",file))
+
+        with io.open(osm_4name_file_name, mode='w', encoding=config["encoding"]) as osm_4name_file:
+            osm_4name_file.write(response.text)
+            print("OSM Name Data received and is saved in OSM Data file")
+
+    if not name_json:
+        print("Error getting osm name data from file")
+        print(name_json)
+        return
+
+    # Check if any of the unnamed parks have names in the new file
+    found_new_name = False
+    for element in nest_json['elements']:
+        if element["type"] != "node":
+            tags = element["tags"]
+            if "name" not in tags:
+                for element_name in name_json['elements']:
+                    if element_name["type"] != "node" and element["id"] == element_name["id"] and "name" in element_name["tags"]:
+                        print("We found a name in the OSM Name data: {}".format(element_name["tags"]["name"]))
+                        found_new_name = True
+                        tags["name"] = element_name["tags"]["name"]
+
+    # If there are new names, write the updated JSON to the data file
+    if found_new_name:
+        with io.open(osm_file_name, mode='w', encoding=config["encoding"]) as osm_file:
+            osm_file.write(json.dumps(nest_json, indent=4))
+            print("OSM Data file updated with new names")
+    else:
+        print("No new names found")
+
+    print("Getting OSM Data...Complete (took {:.2f} minutes)".format((time.time() - start_time)/60))
 
     # Read the Area Data File
     area_file_name = PARKNAME_FILE.format(area=config['area_name'])
@@ -521,6 +580,37 @@ def analyze_nest_data(config):
                     "center_lat": line["center_lat"],
                     "center_lon": line["center_lon"],
                 }
+
+        # If there was a new name, updated the CSV file too
+        if found_new_name:
+            print("Adding new names to the CSV file")
+            for a_id, a_data in area_file_data.items():
+                if a_data["name"] == config['default_park_name']:
+                    for element_name in name_json['elements']:
+                        if element_name["type"] != "node" and int(a_id) == element_name["id"] and "name" in element_name["tags"]:
+                            print("Update the name for ID: {} to the name: {}".format(a_id, element_name["tags"]["name"]))
+                            a_data["name"] = element_name["tags"]["name"]
+
+            with io.open(area_file_name, mode='w', encoding=config["encoding"]) as area_file:
+                print("Rewriting area data file...")
+                fieldnames = [u"name", u"center_lat", u"center_lon", u"osm_id"]
+                dict_writer = csv.DictWriter(
+                    area_file,
+                    fieldnames=fieldnames,
+                    quotechar='"',
+                    quoting=csv.QUOTE_MINIMAL,
+                )
+                dict_writer.writeheader()
+                # This ONLY WORKS on Python3 str, unicode with write
+                for a_id, a_data in area_file_data.items():
+                    dict_writer.writerow({
+                        "osm_id": a_id,
+                        "name": u"" + a_data["name"],
+                        "center_lat": a_data["center_lat"],
+                        "center_lon": a_data["center_lon"],
+                    })
+                print("Area names updated successfully")
+
     except FileNotFoundError:
         print("No Area Data file found, we will create it at the end\n")
 
@@ -615,6 +705,7 @@ def analyze_nest_data(config):
     areas = dict()
     areas_basic = dict()
     relations_len = len(relations)
+    print("Starting to analyze Nest - Check Relations")
     for (idx, (_id, relation)) in enumerate(relations.items(), start=1):
         relation_name = config['default_park_name']
         if str(_id) in area_file_data:
@@ -685,11 +776,11 @@ def analyze_nest_data(config):
             properties=area_poly_props)
         areas[_id] = feat
 
-
     # Check Ways
     all_areas = list()
     failed_nests = defaultdict(int)
     ways_len = len(ways)
+    print("\nStarting to analyze Nest - Check Ways")
     for (idx, (_id, way)) in enumerate(ways.items(), start=1):
         way_name = config['default_park_name']
         if str(_id) in area_file_data:
@@ -736,6 +827,7 @@ def analyze_nest_data(config):
 
     # NOW CHECK ALL AREAS ONE AFTER ANOTHER
     areas_len = len(areas)
+    print("\nStarting to analyze Nest - Filtering")
     for (idx, (_id, area)) in enumerate(areas.items(), start=1):
         area_points = area["geometry"]
         area_prop = area["properties"]
@@ -817,6 +909,7 @@ def analyze_nest_data(config):
             failed_nests["Park has not enough Spawnpoints, ignore it"] += 1
             continue
         spawnpoint_in = "'{}'".format("','".join(str(nr) for nr in area_spawnpoints))
+        if spawnpoint_in == "''": spawnpoint_in = "NULL" # This will handle the SQL warning since a blank string shouldn't be used for a number
         pokestop_in = "'{}'".format("','".join(str(nr) for nr in area_pokestops))
 
         # Use data since last change:
@@ -920,16 +1013,16 @@ def analyze_nest_data(config):
     mydb_r.close()
     mydb_w.close()
 
-    print("\nNest analyzing took {:.2f} minutes".format(
-        (time.time() - start_time)/60))
+    print("\nNest analyzing took {:.2f} minutes".format((time.time() - start_time)/60))
     if all_areas:
-        print("All Nests Added ({}):\n############".format(len(all_areas)))
+        print("Total Nests Added: {}".format(len(all_areas)))
     else:
         print("No Nests Added")
     if failed_nests:
-        print("No nest reasons:\n############")
+        print("############ Reasons why nests were not added ############")
         for (key, value) in failed_nests.items():
             print("{}: {}".format(key, value))
+        print("##########################################################")
     else:
         print("No false positive Parks")
 
@@ -947,7 +1040,7 @@ def analyze_nest_data(config):
                 continue
             if float(b_area["pokemon_avg"]) < config["dc-min-spawns-for-post"]:
                 continue
-            nest_time = datetime.utcfromtimestamp(
+            nest_time = datetime.datetime.utcfromtimestamp(
                 int(b_area["current_time"])).strftime('%Y-%m-%d %H:%M:%S')
             park_name = b_area["name"]
 
@@ -1040,14 +1133,14 @@ def analyze_nest_data(config):
         with open(config['save_path'], 'r') as old_file_:
             old_geojson = json.load(old_file_)
             all_areas += old_geojson['features']
-            print('old areas added to the new ones')
+            print('Old areas added to the new ones')
     with open(config['save_path'], 'w') as file_:
-        print('write geojson')
+        print('Writing geojson file')
         file_.write(dumps(FeatureCollection(all_areas), indent=4))
-        print("geoJSON saved successfully")
+        print("GeoJSON file saved successfully")
 
     with io.open(area_file_name, mode='w', encoding=config["encoding"]) as area_file:
-        print("writing area data file...")
+        print("Writing area data file...")
         fieldnames = [u"name", u"center_lat", u"center_lon", u"osm_id"]
         dict_writer = csv.DictWriter(
             area_file,
@@ -1064,7 +1157,7 @@ def analyze_nest_data(config):
                 "center_lat": a_data["center_lat"],
                 "center_lon": a_data["center_lon"],
             })
-        print("area data file saved successfully")
+        print("Area data file saved successfully")
 
 
 
