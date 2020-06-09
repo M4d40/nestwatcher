@@ -122,3 +122,4 @@ The script will use each config in the `custom_configs` folder, one after the ot
 | `ENCODING`      | Encoding user in the script      | `String`       | `utf-8`       |
 | `VERBOSE`      | Print out additional information       | `Boolean`       | `False`       |
 | `OSM_DATE`      | Date which should be used the data from OSM<br />Niantic only update/sync their database 2-3 times a year, so **changing this date can lead to false data**<br />the default value is the current date niantic uses     | `String`       | `2019-02-24T00:00:00Z`       |
+| `OSM_DATE_4NAME`      | Similar to the above date but used to download newer OSM to search for new names.<br />Acceptable values are `NONE`, `TODAY`, or a date string like `2019-02-24T00:00:00Z`.     | `String`       | `TODAY`       |

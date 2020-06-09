@@ -71,3 +71,4 @@ MAP_LINK = https://my-map-domain.de/?lat={lon:.5f}&lon={lat:.5f}&zoom=16
 ENCODING = utf-8
 VERBOSE = False
 OSM_DATE = 2019-02-24T00:00:00Z
+OSM_DATE_4NAME = TODAY
