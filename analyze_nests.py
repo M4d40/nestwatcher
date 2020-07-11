@@ -380,7 +380,7 @@ def create_config(config_path):
         config['db_spawnpoint_lat'] = "lat"
         config['db_spawnpoint_lon'] = "lon"
         config['use_unix_timestamp'] = False
-        
+
     return config
 
 
@@ -661,6 +661,7 @@ def analyze_nest_data(config):
             area_center_point = area_shapeley_poly.centroid
         if not area_shapeley_poly.bounds:
             continue
+
         min_lon, min_lat, max_lon, max_lat = area_shapeley_poly.bounds
 
         area_poly_props = {
