@@ -8,7 +8,7 @@ last_events = serebii.get_last_x_events(5)
 active_events = serebii.get_active_events()
 """
 
-from datetime import datetime
+from datetime import date, datetime, timedelta
 import re
 from dateutil.parser import parse  # python-dateutil
 
@@ -55,6 +55,15 @@ class SerebiiDateUtils(object):
 
     def _analyze_event_end(self):
         """ Analyze end of event. """
+        if "??" in self.end:
+            print("Unknown Event Time end!!!")
+            print("We will assume, it will end tomorrow")
+            today = date.today()
+            tomorrow = today + timedelta(days=1)
+            # fixme later
+            self.end = self.end.replace(
+                "??", "{} {}".format(tomorrow.month, tomorrow.day))
+
         if len(self.end.split()) == 3:
             self.end = parse(self.end)
             if self.end.year < DEFAULT_YEAR:
