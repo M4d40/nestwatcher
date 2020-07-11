@@ -554,13 +554,20 @@ def analyze_nest_data(config):
         found_new_name = False
         for element in nest_json['elements']:
             if element["type"] != "node":
-                tags = element["tags"]
-                if "name" not in tags:
-                    for element_name in name_json['elements']:
-                        if element_name["type"] != "node" and element["id"] == element_name["id"] and "name" in element_name["tags"]:
-                            print("We found a name in the OSM Name data: {}".format(element_name["tags"]["name"]))
-                            found_new_name = True
-                            tags["name"] = element_name["tags"]["name"]
+                if "tags" in element:
+                    tags = element["tags"]
+                    if "name" not in tags and "official_name" not in tags:
+                        for element_name in name_json['elements']:
+                            if element_name["type"] != "node" and element["id"] == element_name["id"] and "tags" in element_name and\
+                            ("name" in element_name["tags"] or "official_name" in element_name["tags"]):
+                                if "name" in element_name["tags"]:
+                                    print("We found a name in the OSM Name data: {}".format(element_name["tags"]["name"]))
+                                    found_new_name = True
+                                    tags["name"] = element_name["tags"]["name"]
+                                elif "official_name" in element_name["tags"]:
+                                    print("We found a name in the OSM Name data: {}".format(element_name["tags"]["official_name"]))
+                                    found_new_name = True
+                                    tags["official_name"] = element_name["tags"]["official_name"]
 
         # If there are new names, write the updated JSON to the data file
         if found_new_name:
@@ -598,9 +605,13 @@ def analyze_nest_data(config):
             for a_id, a_data in area_file_data.items():
                 if a_data["name"] == config['default_park_name']:
                     for element_name in name_json['elements']:
-                        if element_name["type"] != "node" and int(a_id) == element_name["id"] and "name" in element_name["tags"]:
-                            print("Update the name for ID: {} to the name: {}".format(a_id, element_name["tags"]["name"]))
-                            a_data["name"] = element_name["tags"]["name"]
+                        if element_name["type"] != "node" and int(a_id) == element_name["id"] and ("name" in element_name["tags"] or "official_name" in element_name["tags"]):
+                            if "name" in element_name["tags"]:
+                                print("Update the name for ID: {} to the name: {}".format(a_id, element_name["tags"]["name"]))
+                                a_data["name"] = element_name["tags"]["name"]
+                            if "official_name" in element_name["tags"]:
+                                print("Update the name for ID: {} to the name: {}".format(a_id, element_name["tags"]["official_name"]))
+                                a_data["name"] = element_name["tags"]["official_name"]
 
             with io.open(area_file_name, mode='w', encoding=config["encoding"]) as area_file:
                 print("Rewriting area data file...")
@@ -724,6 +735,8 @@ def analyze_nest_data(config):
             relation_name = area_file_data[str(_id)]["name"]
         elif "tags" in relation and "name" in relation["tags"]:
             relation_name = relation["tags"]["name"]
+        elif "tags" in relation and "official_name" in relation["tags"]:
+            relation_name = relation["tags"]["official_name"]
         _city_progress(idx, relations_len, "({}/{}) {}".format(
             idx,
             relations_len,
@@ -735,7 +748,7 @@ def analyze_nest_data(config):
             if member["type"] == "node":
                 # this means, this is just a single poi inside the relation
                 continue
-            way = ways.pop(member["ref"], None)
+            way = ways.get(member["ref"], None)
             if way is None:
                 continue
             way_poly = _convert_way(way)
@@ -798,6 +811,8 @@ def analyze_nest_data(config):
             way_name = area_file_data[str(_id)]["name"]
         elif "tags" in way and "name" in way["tags"]:
             way_name = way["tags"]["name"]
+        elif "tags" in relation and "official_name" in relation["tags"]:
+            way_name = relation["tags"]["official_name"]
         _city_progress(idx, ways_len, "({}/{}) {}".format(
             idx,
             ways_len,
@@ -915,8 +930,7 @@ def analyze_nest_data(config):
         if not area_pokestops and not area_spawnpoints:
             failed_nests["Park has no Stops and no Spawnpoints, ignore it"] += 1
             continue
-        if (len(area_pokestops) < 1) and (
-                len(area_spawnpoints) < config['min_spawn']):
+        if (len(area_pokestops) < 1) and (len(area_spawnpoints) < config['min_spawn']):
             failed_nests["Park has not enough Spawnpoints, ignore it"] += 1
             continue
         spawnpoint_in = "'{}'".format("','".join(str(nr) for nr in area_spawnpoints))
