@@ -380,7 +380,7 @@ def create_config(config_path):
         config['db_spawnpoint_lat'] = "lat"
         config['db_spawnpoint_lon'] = "lon"
         config['use_unix_timestamp'] = False
-        
+
     return config
 
 
@@ -630,7 +630,9 @@ def analyze_nest_data(config):
             if member["type"] == "node":
                 # this means, this is just a single poi inside the relation
                 continue
-            way = ways.pop(member["ref"])
+            way = ways.pop(member["ref"], None)
+            if way is None:
+                continue
             way_poly = _convert_way(way)
             if way_poly is None:
                 continue
@@ -638,8 +640,8 @@ def analyze_nest_data(config):
                 inner_members.append(way_poly)
             else:  #role == "outer" or no inner/outer infos are given
                 outer_members.append(way_poly)
-        outer_polygon = geometry.MultiPolygon(outer_members)
-        inner_polygon = geometry.MultiPolygon(inner_members)
+        outer_polygon = geometry.MultiPolygon(outer_members).buffer(0)
+        inner_polygon = geometry.MultiPolygon(inner_members).buffer(0)
         final_polygon = None
         if outer_polygon and inner_polygon:
             final_polygon = outer_polygon.symmetric_difference(
@@ -657,6 +659,8 @@ def analyze_nest_data(config):
             area_center_point = geometry.Point(center_lat, center_lon)
         else:
             area_center_point = area_shapeley_poly.centroid
+        if not area_shapeley_poly.bounds:
+            continue
 
         min_lon, min_lat, max_lon, max_lat = area_shapeley_poly.bounds
 
