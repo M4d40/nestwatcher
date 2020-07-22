@@ -636,17 +636,20 @@ def analyze_nest_data(config):
     # Get Event Data
     event_pokes = set(config['event_poke'])
     if config['event_automation']:
-        print("Event-Automation active, checking for active events")
-        serebii = SerebiiPokemonGo()
-        active_events = serebii.get_active_events()
-        event_pokes = set()
-        if active_events:
-            print("Active Events found:")
-            print(active_events)
-            for event in active_events:
-                event_pokes.update(event.pokemon)
-        else:
-            print("Currently no active Event found, no event pokemon will be used")
+        try:
+            r = requests.get("https://raw.githubusercontent.com/ccev/pogoinfo/info/events/active.json")
+            pogoinfo_events = r.json()
+            if datetime.strptime(pogoinfo_events["end"], "%Y-%m-%d %H:%M") > datetime.now():
+                print("Active Event found:")
+                print(pogoinfo_events["name"])
+                event_pokes = []
+                for mon in pogoinfo_events["details"]["spawns"]:
+                    event_pokes.append(int(mon.split("_")[0])
+        
+            else:
+                print("Currently no active Event found, no event pokemon will be used")
+        except:
+            print("Error with event automation - using config instead")
 
     if NEST_SPECIES_LIST:
         nest_mons = set(NEST_SPECIES_LIST) - event_pokes
