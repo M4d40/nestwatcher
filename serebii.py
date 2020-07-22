@@ -16,7 +16,7 @@ import requests
 from bs4 import BeautifulSoup
 
 
-DEFAULT_YEAR = 2019
+DEFAULT_YEAR = 2020
 SPECIAL_DATETIMES = {
     "Holiday 2019": "December 24th 2019 - January 1st 2020"
 }

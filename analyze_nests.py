@@ -458,7 +458,7 @@ def analyze_nest_data(config):
         with io.open(osm_file_name, mode='r', encoding=config["encoding"]) as osm_file:
             print("OSM Data file found, we will use this! :D")
             nest_json = json.loads(osm_file.read())
-    except IOError:
+    except (IOError, OSError):
         print("No OSM Data file found, will get the data now.\n")
         nest_url = osm_uri(
             config['p1_lat'],
@@ -506,10 +506,10 @@ def analyze_nest_data(config):
             date=name_date)
         try:
             with io.open(osm_4name_file_name, mode='r', encoding=config["encoding"]) as osm_4name_file:
-                print("OSM Name Data file found with today's date, we will use this! :D")
+                print("OSM Name Data file found for the {}, we will use this! :D".format(name_date))
                 name_json = json.loads(osm_4name_file.read())
-        except IOError:
-            print("No OSM Name Data file found with today's date, will get the data now.\n")
+        except (IOError, OSError):
+            print("No OSM Name Data file found for the {}, will get the data now.\n".format(name_date))
             name_url = osm_uri(
                 config['p1_lat'],
                 config['p1_lon'],
@@ -520,7 +520,7 @@ def analyze_nest_data(config):
             )
             print("{} Overpass url:".format(config["area_name"]))
             print(name_url)
-            print("Getting OSM Data...")
+            print("Getting OSM Data for Names...")
             osm_name_session = requests.Session()
 
             response = osm_name_session.get(name_url)
@@ -809,8 +809,8 @@ def analyze_nest_data(config):
             way_name = area_file_data[str(_id)]["name"]
         elif "tags" in way and "name" in way["tags"]:
             way_name = way["tags"]["name"]
-        elif "tags" in relation and "official_name" in relation["tags"]:
-            way_name = relation["tags"]["official_name"]
+        elif "tags" in way and "official_name" in way["tags"]:
+            way_name = way["tags"]["official_name"]
         _city_progress(idx, ways_len, "({}/{}) {}".format(
             idx,
             ways_len,
