@@ -717,7 +717,7 @@ def analyze_nest_data(config):
             return None  # I know i don't need, but return alone looks sad ^^
         return geometry.Polygon(area_points)
 
-    with open(POKE_NAMES_FILE) as pk_names_file:
+    with open(POKE_NAMES_FILE, encoding=config["encoding"]) as pk_names_file:
         poke_names = json.load(pk_names_file)
     with open(config['dc-locale-file']) as loc_file:
         locale = json.load(loc_file)
