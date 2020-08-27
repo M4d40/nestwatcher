@@ -39,6 +39,7 @@ The script will use each config in the `custom_configs` folder, one after the ot
 | `MIN_SPAWNPOINT_NEST_COUNT`      | Minimum amount a spawnpoint must be in nest area       | `Integer`       | `10`       |
 | `DELETE_OLD_NESTS`      | Delete old Nests in DB       | `Boolean`       | `True`       |
 | `EVENT_POKEMON`      | Filter out event pokemon from nest analyze       | `List`       | `[]`       |
+| `EVENT_SOURCE`      | Choose what source should be used ("ccev" or "serebii")      | `String`       | `ccev`       |
 | `POKESTOP_POKEMON`      | Use also Pokemon from pokestops (Only works with RDM)       | `Boolean`       | `True`       |
 | `ANALYZE_MULTIPOLYGONS`      | Analyze only Multipolygons<br /> \[only needed if not all Nests are scanned]<br /> (Use an extra config for each park, to not get limited by API!)       | `Boolean`       | `False`       |
 
