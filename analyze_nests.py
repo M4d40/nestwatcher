@@ -211,6 +211,9 @@ def create_config(config_path):
     config['event_automation'] = config_raw.getboolean(
         'Nest Config',
         'EVENT_AUTOMATION')
+    config['event_source'] = config_raw.get(
+        'Nest Config',
+        'EVENT_SOURCE')
     config['event_poke'] = json.loads(config_raw.get(
         'Nest Config',
         'MANUAL_EVENT_POKEMON'))
@@ -637,16 +640,34 @@ def analyze_nest_data(config):
     event_pokes = set(config['event_poke'])
     if config['event_automation']:
         print("Event-Automation active, checking for active events")
-        serebii = SerebiiPokemonGo()
-        active_events = serebii.get_active_events()
+        print("Event Source:", config['event_source'])
         event_pokes = set()
-        if active_events:
-            print("Active Events found:")
-            print(active_events)
-            for event in active_events:
-                event_pokes.update(event.pokemon)
+        if config['event_source'] == "serebii":
+            serebii = SerebiiPokemonGo()
+            active_events = serebii.get_active_events()
+            event_pokes = set()
+            if active_events:
+                print("Active Event(s) found:")
+                print(active_events)
+                for event in active_events:
+                    event_pokes.update(event.pokemon)
+
+        elif config['event_source'] == "ccev":
+            r = requests.get("https://raw.githubusercontent.com/ccev/pogoinfo/info/events/active.json")
+            pogoinfo_events = r.json()
+            if isinstance(pogoinfo_events, dict):
+                pogoinfo_events = [pogoinfo_events]
+            for event in pogoinfo_events:
+                if datetime.datetime.strptime(
+                        event["end"], "%Y-%m-%d %H:%M") > datetime.datetime.now():
+                    print("Active Event found:")
+                    print(event["name"])
+                    for mon in event["details"]["spawns"]:
+                        event_pokes.update(int(mon.split("_")[0]))
         else:
-            print("Currently no active Event found, no event pokemon will be used")
+            print("Unkown event source, use 'serebii' or 'ccev'")
+        if not event_pokes:
+            print("Currently there seems to be no Event Pokemon")
 
     if NEST_SPECIES_LIST:
         nest_mons = set(NEST_SPECIES_LIST) - event_pokes
