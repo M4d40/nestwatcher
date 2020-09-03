@@ -83,7 +83,7 @@ The script will use each config in the `custom_configs` folder, one after the ot
 | Variable name | Description                    | Type       | Default Value       |
 | ------------- | ------------- |  ------------------------------ | ------------- |
 | `SAVE_PATH`      | Filepath on which the geojson file should be saved      | `String`       | `/var/www/nest.json`       |
-| `GEOJSON_EXTEND`      | False => Overwrite existend file (if there is one)<br /> True => Extend the geojson file with the new analyzed data<br /> (True is normally used for main city and then on the other cities it is used False, so that the one file have data from all cities)      | `Boolean`       | `False`       |
+| `GEOJSON_EXTEND`      | False => Overwrite existend file (if there is one)<br /> True => Extend the geojson file with the new analyzed data<br /> (False is normally used for main city and then on the other cities it is used True, so that the one file have data from all cities)      | `Boolean`       | `False`       |
 | `DEFAULT_PARK_NAME`      | Default Name that should be used for unknown park names      | `String`       | `Unknown Parkname`       |
 | `STROKE`      | Color of the Nest-Area-Line as Hex      | `String`       | `#352BFF`       |
 | `STROKE-WIDTH`      | Width of the Nest-Area-Line      | `Int/Double`       | `2`       |
