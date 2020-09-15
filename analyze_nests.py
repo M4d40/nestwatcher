@@ -692,7 +692,7 @@ def analyze_nest_data(config):
                     print("Active Event found:")
                     print(event["name"])
                     for mon in event["details"]["spawns"]:
-                        event_pokes.update(int(mon.split("_")[0]))
+                        event_pokes.add(int(mon.split("_")[0]))
         else:
             print("Unkown event source, use 'serebii' or 'ccev'")
         if not event_pokes:
@@ -769,7 +769,7 @@ def analyze_nest_data(config):
 
     with open(POKE_NAMES_FILE, encoding=config["encoding"]) as pk_names_file:
         poke_names = json.load(pk_names_file)
-    with open(config['dc-locale-file']) as loc_file:
+    with open(config['dc-locale-file'], encoding=config["encoding"]) as loc_file:
         locale = json.load(loc_file)
     areas = dict()
     areas_basic = dict()
