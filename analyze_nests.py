@@ -818,6 +818,8 @@ def analyze_nest_data(config):
             final_polygon = inner_polygon
 
         area_shapeley_poly = final_polygon.convex_hull
+        if not area_shapeley_poly.bounds:
+            continue
 
         if _id in area_file_data:
             center_lat = float(area_file_data[str(_id)]["center_lat"])
@@ -825,8 +827,6 @@ def analyze_nest_data(config):
             area_center_point = geometry.Point(center_lat, center_lon)
         else:
             area_center_point = polylabel(final_polygon, tolerance=1e-6)
-        if not area_shapeley_poly.bounds:
-            continue
 
         min_lon, min_lat, max_lon, max_lat = area_shapeley_poly.bounds
 
