@@ -171,6 +171,8 @@ VALUES(
 ON DUPLICATE KEY UPDATE
     pokemon_id = %(pokemon_id)s,
     name = %(name)s,
+    lat = %(lat)s,
+    lon = %(lon)s,
     type = %(type)s,
     pokemon_count = %(pokemon_count)s,
     pokemon_avg = %(pokemon_avg)s,
