@@ -11,6 +11,7 @@ from collections import defaultdict, OrderedDict
 import datetime, argparse, csv, io, json, sys, time, requests, os
 
 from shapely import geometry
+from shapely.ops import polylabel
 from pymysql import connect
 from geojson import (
     Feature,
@@ -823,7 +824,7 @@ def analyze_nest_data(config):
             center_lon = float(area_file_data[str(_id)]["center_lon"])
             area_center_point = geometry.Point(center_lat, center_lon)
         else:
-            area_center_point = area_shapeley_poly.centroid
+            area_center_point = polylabel(final_polygon, tolerance=1e-6)
         if not area_shapeley_poly.bounds:
             continue
 
@@ -878,7 +879,7 @@ def analyze_nest_data(config):
             center_lon = float(area_file_data[str(_id)]["center_lon"])
             way_center_point = geometry.Point(center_lat, center_lon)
         else:
-            way_center_point = way_shapeley_poly.centroid
+            way_center_point = polylabel(way_poly, tolerance=1e-6)
         min_lon, min_lat, max_lon, max_lat = way_shapeley_poly.bounds
         way_poly_props = {
             "name": way_name,
