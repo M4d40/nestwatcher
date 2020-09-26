@@ -825,7 +825,7 @@ def analyze_nest_data(config):
             center_lat = float(area_file_data[str(_id)]["center_lat"])
             center_lon = float(area_file_data[str(_id)]["center_lon"])
             area_center_point = geometry.Point(center_lat, center_lon)
-        else:
+        elif final_polygon.is_valid:
             area_center_point = polylabel(final_polygon, tolerance=1e-6)
 
         min_lon, min_lat, max_lon, max_lat = area_shapeley_poly.bounds
@@ -878,7 +878,7 @@ def analyze_nest_data(config):
             center_lat = float(area_file_data[str(_id)]["center_lat"])
             center_lon = float(area_file_data[str(_id)]["center_lon"])
             way_center_point = geometry.Point(center_lat, center_lon)
-        else:
+        elif way_poly.is_valid:
             way_center_point = polylabel(way_poly, tolerance=1e-6)
         min_lon, min_lat, max_lon, max_lat = way_shapeley_poly.bounds
         way_poly_props = {
