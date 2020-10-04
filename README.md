@@ -1,4 +1,5 @@
 # my branch (wip)
+analyze_nests.py is not being used!
 
 ## changes:
 - runtime improvements (about half the runtime for me)
