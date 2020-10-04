@@ -32,7 +32,9 @@ defaults = {
     "min_average": 0.5,
     "scan_hours_per_day": 24
 }
-settings_defaults = [s for s in settings if s.get("area") == "DEFAULT"][0]
+settings_defaults = [s for s in settings if s.get("area") == "DEFAULT"]
+if settings_default:
+    settings_defaults = settings_defaults[0]
 for k, v in defaults.items():
     defaults[k] = settings_defaults.get(k, v)
 
