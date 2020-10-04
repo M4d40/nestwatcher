@@ -3,7 +3,7 @@ no rdm support yet!!
 
 ## changes:
 - runtime improvements (about half the runtime for me)
-- better area support (no extra multipolygon areas, geofences instead of bboxes)
+- better area support (no extra multipolygon areas, geofences instead of bboxes, no extra config files)
 - less reliability on local files
 - cleaning up code, logs and configs
 - has PR26 for better marker results
