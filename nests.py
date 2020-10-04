@@ -33,8 +33,10 @@ defaults = {
     "scan_hours_per_day": 24
 }
 settings_defaults = [s for s in settings if s.get("area") == "DEFAULT"]
-if len(settings_defaults) == 0:
+if len(settings_defaults) > 0:
     settings_defaults = settings_defaults[0]
+else:
+    settings_defaults = {}
 for k, v in defaults.items():
     defaults[k] = settings_defaults.get(k, v)
 
