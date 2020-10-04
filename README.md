@@ -1,5 +1,5 @@
 # my branch (wip)
-analyze_nests.py is not being used!
+no rdm support yet!!
 
 ## changes:
 - runtime improvements (about half the runtime for me)
