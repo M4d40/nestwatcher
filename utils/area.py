@@ -6,7 +6,7 @@ import math
 from shapely import geometry
 from shapely.ops import polylabel
 from geojson import Feature
-from urllib.parse import quote, quote_plus
+from urllib.parse import quote_plus
 
 def get_zoom(ne, sw, width, height, tile_size):
     ne = [c * 1.06 for c in ne]
@@ -98,6 +98,7 @@ class Area():
         # statimap gen
         polygons = [] # maybe?
         markers = []
+        static_map = ""
         if config.static_url:
             zoom = get_zoom(
                 [self.max_lat, self.max_lon],
@@ -118,8 +119,9 @@ class Area():
                         ])
                 markers += points
             center = self.polygon.centroid
-            static_map = config.static_url + "staticmap/nests?" + f"lat={center.x}&lon={center.y}"
-            
+            static_map = config.static_url + "staticmap/nests?" + f"lat={center.x}&lon={center.y}&zoom={zoom}&nestjson={quote_plus(json.dumps(markers))}&pregenerate=true&regeneratable=true"
+            result = requests.get(static_map)
+            static_map = config.static_url + f"staticmap/pregenerated/{result.text}"
 
         # Text gen + filtering
 
