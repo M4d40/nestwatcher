@@ -96,7 +96,7 @@ class Area():
         self.nests = sorted(self.nests, key=sorts[filters["sort_by"]])
 
         # statimap gen
-        polygons = [] # maybe?
+        #polygons = [] # maybe?
         markers = []
         static_map = ""
         if config.static_url:
@@ -140,6 +140,7 @@ class Area():
                     park_name=nest.name,
                     lat=nest.lat,
                     lon=nest.lon,
+                    staticmap=static_map,
 
                     mon_id=nest.mon_id,
                     mon_avg=nest.mon_avg,

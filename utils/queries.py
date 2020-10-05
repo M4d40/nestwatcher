@@ -100,7 +100,7 @@ class Queries():
         return self.cursor.fetchall()
     
     def mons(self, spawns, mons, time, pokestops=None):
-        query = self.queries["mons"].format(spawnpoints=spawns, nest_mons=mons, reset_time=time)
+        query = self.queries["mons"].format(spawnpoints=spawns, nest_mons=mons, reset_time=time, pokestops=pokestops)
         if not pokestops is None:
             query = query.format(pokestops=pokestops)
 
