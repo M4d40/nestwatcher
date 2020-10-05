@@ -56,19 +56,6 @@ class Area():
         self.bbox = f"{self.min_lon},{self.min_lat},{self.max_lon},{self.max_lat}"
     
     def get_nest_text(self, template, config):
-        def replace(dic):
-            # Formats all strings in a dict
-            for k, v in dic.items():
-                if isinstance(v, str):
-                    dic[k] = v.format(
-                        nest_entry=entries,
-                        areaname=self.name,
-                        staticmap=""
-                    )
-                elif isinstance(v, dict):
-                    dic[k] = replace(v)
-            return dic
-
         with open(f"data/mon_names/{config.language}.json", "r") as f:
             mon_names = json.load(f)
         shiny_data = requests.get("https://pogoapi.net/api/v1/shiny_pokemon.json").json()
@@ -99,12 +86,16 @@ class Area():
         #polygons = [] # maybe?
         markers = []
         static_map = ""
-        if config.static_url:
+        if len(config.static_url) > 0:
+            maxlat = max([n.max_lat for n in self.nests])
+            minlat = min([n.min_lat for n in self.nests])
+            maxlon = max([n.max_lon for n in self.nests])
+            minlon = min([n.min_lon for n in self.nests])
             zoom = get_zoom(
-                [self.max_lat, self.max_lon],
-                [self.min_lat, self.min_lon],
+                [maxlat, maxlon],
+                [minlat, minlon],
                 1000,
-                800,
+                600,
                 256
             )
             for nest in self.nests:
@@ -113,17 +104,33 @@ class Area():
                     pnt = geometry.Point(random.uniform(nest.min_lon, nest.max_lon), random.uniform(nest.min_lat, nest.max_lat))
                     if nest.polygon.contains(pnt):
                         points.append([
-                            f"https://raw.githubusercontent.com/whitewillem/PogoAssets/resized/icons_large/pokemon_icon_{str(nest.mon_id).zfill(3)}_00.png",
-                            pnt.y,
-                            pnt.x
+                            str(nest.mon_id).zfill(3),
+                            round(pnt.y, 6),
+                            round(pnt.x, 6)
                         ])
                 markers += points
-            center = self.polygon.centroid
-            static_map = config.static_url + "staticmap/nests?" + f"lat={center.x}&lon={center.y}&zoom={zoom}&nestjson={quote_plus(json.dumps(markers))}&pregenerate=true&regeneratable=true"
+            center_lat = minlat + ((maxlat - minlat) / 2)
+            center_lon = minlon + ((maxlon - minlon) / 2)
+            static_map = config.static_url + "staticmap/nests?" + f"lat={center_lat}&lon={center_lon}&zoom={zoom}&nestjson={quote_plus(json.dumps(markers))}&pregenerate=true&regeneratable=true"
+            print(static_map)
             result = requests.get(static_map)
             static_map = config.static_url + f"staticmap/pregenerated/{result.text}"
+            requests.get(static_map)
 
         # Text gen + filtering
+
+        def replace(dic):
+            # Formats all strings in a dict
+            for k, v in dic.items():
+                if isinstance(v, str):
+                    dic[k] = v.format(
+                        nest_entry=entries,
+                        areaname=self.name,
+                        staticmap=static_map
+                    )
+                elif isinstance(v, dict):
+                    dic[k] = replace(v)
+            return dic
 
         for nest in self.nests:
             if nest.mon_avg < filters["min_avg"]:
@@ -140,7 +147,6 @@ class Area():
                     park_name=nest.name,
                     lat=nest.lat,
                     lon=nest.lon,
-                    staticmap=static_map,
 
                     mon_id=nest.mon_id,
                     mon_avg=nest.mon_avg,
