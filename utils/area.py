@@ -117,7 +117,7 @@ class Park():
         self._config = config
 
         self.polygon = None
-        self.min_lon, self.min_lat, self.max_lon, self.max_lat = 0
+        self.min_lon, self.min_lat, self.max_lon, self.max_lat = (0, 0, 0, 0)
         self.sql_fence = ""
         self.Feature = None
 
