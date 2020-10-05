@@ -13,6 +13,7 @@
 ## todo
 - limit emoji creation to only needed ones (avoid 50 emoji limit)
 - discord tool to name parks / change the marker
+- show polygons on static maps
 
 ## quick how to setup:
 - cp -r config_example config
