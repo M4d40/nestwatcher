@@ -111,12 +111,12 @@ def analyze_nests(config, area, nest_mons, queries):
             if config.scanner == "rdm" and config.pokestop_pokemon:
                 # Get all Pokestops with id, lat and lon
                 for pkstp in queries.stops(park.sql_fence):
-                    stops.append(pkstp[0])
+                    stops.append(str(pkstp[0]))
                 pokestop_in = "'{}'".format("','".join(stops))
 
             spawns = []
             for spwn in queries.spawns(park.sql_fence):
-                spawns.append(spwn[0])
+                spawns.append(str(spwn[0]))
 
             if not stops and not spawns:
                 failed_nests["No Stops or Spawnpoints"] += 1

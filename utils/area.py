@@ -1,3 +1,7 @@
+import json
+import requests
+import random
+
 from shapely import geometry
 from shapely.ops import polylabel
 from geojson import Feature
@@ -22,8 +26,9 @@ class Area():
         bounds = self.polygon.bounds
         self.bbox = f"{bounds[0]},{bounds[1]},{bounds[2]},{bounds[3]}"
     
-    def get_nest_text(self, template, entry):
+    def get_nest_text(self, template, lang, static_url):
         def replace(dic):
+            # Formats all strings in a dict
             for k, v in dic.items():
                 if isinstance(v, str):
                     dic[k] = v.format(
@@ -34,14 +39,76 @@ class Area():
                 elif isinstance(v, dict):
                     dic[k] = replace(v)
             return dic
+
+        with open(f"data/mon_names/{lang}.json", "r") as f:
+            mon_names = json.load(f)
+        shiny_data = requests.get("https://pogoapi.net/api/v1/shiny_pokemon.json").json()
+
+        filters = template[1]
         entries = ""
+
+        # Sorting
+
+        def sort_avg(nest):
+            return nest.mon_avg
+        def sort_count(nest):
+            return nest.mon_count
+        def sort_mid(nest):
+            return nest.mon_id
+        def sort_name(nest):
+            return nest.name
+
+        sorts = {
+            "mon_avg": sort_avg,
+            "mon_count": sort_count,
+            "mon_id": sort_mid,
+            "park_name": sort_name
+        }
+        self.nests = sorted(self.nests, key=sorts[filters["sort_by"]])
+
+        # statimap gen
+        polygons = [] # maybe?
+        markers = []
+        if static_url:
+            for nest in self.nests:
+                points = []
+                while len(points) < nest.mon_avg - 1:
+                    pnt = geometry.Point(random.uniform(nest.min_lon, nest.max_lon), random.uniform(nest.min_lat, nest.max_lat))
+                    if nest.polygon.contains(pnt):
+                        points.append({
+                            "url": f"https://raw.githubusercontent.com/whitewillem/PogoAssets/resized/icons_large/pokemon_icon_{str(nest.mon_id).zindex(3)}_00.png",
+                            "height": 20,
+                            "width": 20,
+                            "latitude": pnt.y,
+                            "longitude": pnt.x
+                        })
+                markers += points
+
+        # Text gen + filtering
+
         for nest in self.nests:
+            if nest.mon_avg < filters["min_avg"]:
+                continue
+            if nest.name == nest._default_name and filters["ignore_unnamed"]:
+                continue
+
+            shiny_emote = ""
+            if shiny_data.get(str(nest.mon_id), {}).get("found_wild", False):
+                shiny_emote = "✨"
+
             if len(entries) < 1500:
-                entries += entry.format(
+                entries += filters["nest_entry"].format(
                     park_name=nest.name,
-                    mon_name=nest.mon_id
+                    lat=nest.lat,
+                    lon=nest.lon,
+
+                    mon_id=nest.mon_id,
+                    mon_avg=nest.mon_avg,
+                    mon_count=nest.mon_count,
+                    mon_name=mon_names.get(str(nest.mon_id), ""),
+                    shiny=shiny_emote
                 )
-        return replace(template)
+        return replace(template[0])
 
 class Park():
     def __init__(self, element, config):
@@ -50,6 +117,7 @@ class Park():
         self._config = config
 
         self.polygon = None
+        self.min_lon, self.min_lat, self.max_lon, self.max_lat = 0
         self.sql_fence = ""
         self.Feature = None
 
@@ -92,7 +160,7 @@ class Park():
         self.get_feature()
 
     def get_feature(self):
-        min_lon, min_lat, max_lon, max_lat = self.polygon.convex_hull.bounds
+        self.min_lon, self.min_lat, self.max_lon, self.max_lat = self.polygon.convex_hull.bounds
         properties = {
             "name": self.name,
             "stroke": self._config.json_stroke,
@@ -101,10 +169,10 @@ class Park():
             "fill": self._config.json_fill,
             "fill-opacity": self._config.json_fill_opacity,
             "area_center_point": geometry.Point(self.lat, self.lon),
-            "min_lon": min_lon,
-            "min_lat": min_lat,
-            "max_lon": max_lon,
-            "max_lat": max_lat,
+            "min_lon": self.min_lon,
+            "min_lat": self.min_lat,
+            "max_lon": self.max_lon,
+            "max_lat": self.max_lat,
         }
 
         self.feature = Feature(

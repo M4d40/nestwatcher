@@ -12,7 +12,6 @@ from utils.analyze import analyze_nests
 from utils.config import Config
 from utils.logging import log
 from utils.queries import Queries
-from utils.discord import send_message
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-c", "--config", default="config/config.ini", help="Config file to use")
@@ -123,7 +122,7 @@ if discord_message:
                     if message.author == bot.user:
                         found = True
                         break
-                embed = discord.Embed().from_dict(area.get_nest_text(discord_template[0], discord_template[1]["nest_entry"]))
+                embed = discord.Embed().from_dict(area.get_nest_text(discord_template, config.language))
                 if found:
                     await message.edit(embed=embed)
                 else:
