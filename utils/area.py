@@ -26,7 +26,7 @@ class Area():
         bounds = self.polygon.bounds
         self.bbox = f"{bounds[0]},{bounds[1]},{bounds[2]},{bounds[3]}"
     
-    def get_nest_text(self, template, lang, static_url):
+    def get_nest_text(self, template, lang, config):
         def replace(dic):
             # Formats all strings in a dict
             for k, v in dic.items():
@@ -69,14 +69,14 @@ class Area():
         # statimap gen
         polygons = [] # maybe?
         markers = []
-        if static_url:
+        if config.static_url:
             for nest in self.nests:
                 points = []
                 while len(points) < nest.mon_avg - 1:
                     pnt = geometry.Point(random.uniform(nest.min_lon, nest.max_lon), random.uniform(nest.min_lat, nest.max_lat))
                     if nest.polygon.contains(pnt):
                         points.append({
-                            "url": f"https://raw.githubusercontent.com/whitewillem/PogoAssets/resized/icons_large/pokemon_icon_{str(nest.mon_id).zindex(3)}_00.png",
+                            "url": f"https://raw.githubusercontent.com/whitewillem/PogoAssets/resized/icons_large/pokemon_icon_{str(nest.mon_id).zfill(3)}_00.png",
                             "height": 20,
                             "width": 20,
                             "latitude": pnt.y,
