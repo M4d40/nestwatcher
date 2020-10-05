@@ -104,29 +104,37 @@ for i, area in enumerate(areas):
 
 with open(config.json_path, "w+") as file_:
     file_.write(dumps(FeatureCollection(all_features), indent=4))
-    log.success("Saved Geojson file")
+    log.info("Saved Geojson file")
 queries.close()
 
 # Discord stuff
 if discord_message:
+    log.info("Logging into Discord")
     bot = discord.Client()
 
     @bot.event
     async def on_ready():
-        for area in full_areas:
-            d = area.settings["discord"]
-            if isinstance(d, int):
-                channel = await bot.fetch_channel(d)
-                found = False
-                async for message in channel.history():
-                    if message.author == bot.user:
-                        found = True
-                        break
-                embed = discord.Embed().from_dict(area.get_nest_text(discord_template, config))
-                if found:
-                    await message.edit(embed=embed)
-                else:
-                    await channel.send(embed=embed)
+        try:
+            log.info("Connected to Discord. Generating Nest messages and sending them.")
+            for area in full_areas:
+                d = area.settings["discord"]
+                if isinstance(d, int):
+                    channel = await bot.fetch_channel(d)
+                    found = False
+                    async for message in channel.history():
+                        if message.author == bot.user:
+                            found = True
+                            break
+                    embed = discord.Embed().from_dict(area.get_nest_text(discord_template, config))
+                    if found:
+                        await message.edit(embed=embed)
+                        log.success(f"Found existing Nest message for {area.name} and edited it")
+                    else:
+                        await channel.send(embed=embed)
+                        log.success(f"Sent a new Nest message for {area.name}")
+        except Exception as e:
+            log.exception(e)
         await bot.logout()
 
     bot.run(config.discord_token)
+log.success("All done.")

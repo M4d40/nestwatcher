@@ -75,12 +75,13 @@ class Area():
             return nest.name
 
         sorts = {
-            "mon_avg": sort_avg,
-            "mon_count": sort_count,
-            "mon_id": sort_mid,
-            "park_name": sort_name
+            "mon_avg": [sort_avg, True],
+            "mon_count": [sort_count, True],
+            "mon_id": [sort_mid, False],
+            "park_name": [sort_name, False]
         }
-        self.nests = sorted(self.nests, key=sorts[filters["sort_by"]])
+        sort_ = sorts[filters["sort_by"]]
+        self.nests = sorted(self.nests, key=sort_[0], reverse=sort_[1])
 
         # statimap gen
         #polygons = [] # maybe?
@@ -112,7 +113,6 @@ class Area():
             center_lat = minlat + ((maxlat - minlat) / 2)
             center_lon = minlon + ((maxlon - minlon) / 2)
             static_map = config.static_url + "staticmap/nests?" + f"lat={center_lat}&lon={center_lon}&zoom={zoom}&nestjson={quote_plus(json.dumps(markers))}&pregenerate=true&regeneratable=true"
-            print(static_map)
             result = requests.get(static_map)
             static_map = config.static_url + f"staticmap/pregenerated/{result.text}"
             requests.get(static_map)

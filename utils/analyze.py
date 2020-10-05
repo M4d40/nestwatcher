@@ -178,11 +178,7 @@ def analyze_nests(config, area, nest_mons, queries):
                 "pokemon_avg": park.mon_avg,
                 "current_time": int(time.time())
             }
-            area_file_data[park.id] = {
-                "name": park.name,
-                "center_lat": park.lat,
-                "center_lon": park.lon,
-            }
+
             failed_nests["Total Nests found"] += 1
             nests.append(park)
 
@@ -191,6 +187,9 @@ def analyze_nests(config, area, nest_mons, queries):
     log.success(f"Done finding nests in {area.name} ({round(stop - start, 1)} seconds)")
     for k, v in failed_nests.items():
         log.info(f" - {k}: {v}")
+
+    def sort_avg(nest):
+        return nest.mon_avg
 
     with open(area_file_name, mode="w+") as area_file:
         fieldnames = [u"name", u"center_lat", u"center_lon", u"osm_id"]
@@ -201,13 +200,15 @@ def analyze_nests(config, area, nest_mons, queries):
             quoting=csv.QUOTE_MINIMAL,
         )
         dict_writer.writeheader()
-        for a_id, a_data in area_file_data.items():
+
+        for nest in sorted(nests, key=sort_avg, reverse=True):
             dict_writer.writerow({
-                "osm_id": a_id,
-                "name": u"" + a_data["name"],
-                "center_lat": a_data["center_lat"],
-                "center_lon": a_data["center_lon"],
+                "osm_id": nest.id,
+                "name": u"" + nest.name,
+                "center_lat": nest.lat,
+                "center_lon": nest.lon,
             })
         log.info("Saved area data")
+    log.success(f"All done with {area.name}\n")
 
     return nests
