@@ -4,10 +4,12 @@
         "min_pokemon": 9,
         "min_spawnpoints": 2,
         "min_average": 0.5,
-        "scan_hours_per_day": 24
+        "scan_hours_per_day": 24,
+        "discord": null
     },
     {
         "area": "samplecity",
-        "min_pokemon": 4
+        "min_pokemon": 4,
+        "discord": ""
     }
 ]

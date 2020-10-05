@@ -1,0 +1,13 @@
+[{
+    "title": "Nest report for {areaname}",
+    "description": "{nest_entry}",
+    "image": {
+        "url": "{staticmap}"
+    }
+},
+{
+    "nest_entry": "**{park_name}**: {mon_name}\n",
+    "sorty_by": "nest_avg",
+    "min_spawns": 3,
+    "ignore_unnamed": false
+}]

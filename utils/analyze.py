@@ -106,28 +106,25 @@ def analyze_nests(config, area, nest_mons, queries):
         for park in parks:
             progress.update(check_nest_task, advance=1, description=f"Nests found: {failed_nests['Total Nests found']}")
 
-            area_pokestops = dict()
             pokestop_in = None
-            if config.scanner == "rdm":
+            stops = []
+            if config.scanner == "rdm" and config.pokestop_pokemon:
                 # Get all Pokestops with id, lat and lon
-                for pkstp in queries.stops(area.sql_fence):
-                    pkst_point = geometry.Point(pkstp[2], pkstp[1])
-                    if pkst_point.within(geometry.shape(area_points)):
-                        area_pokestops[pkstp[0]] = pkst_point
-                pokestop_in = "'{}'".format("','".join(str(nr) for nr in area_pokestops))
+                for pkstp in queries.stops(park.sql_fence):
+                    stops.append(pkstp[0])
+                pokestop_in = "'{}'".format("','".join(stops))
 
-            area_spawnpoints = dict()
+            spawns = []
             for spwn in queries.spawns(park.sql_fence):
-                spwn_point = geometry.Point(spwn[1], spwn[2])
-                area_spawnpoints[spwn[0]] = spwn_point
+                spawns.append(spwn[0])
 
-            if not area_pokestops and not area_spawnpoints:
-                failed_nests["No Stops and no Spawnpoints"] += 1
+            if not stops and not spawns:
+                failed_nests["No Stops or Spawnpoints"] += 1
                 continue
-            if (len(area_pokestops) < 1) and (len(area_spawnpoints) < area.settings['min_spawnpoints']):
+            if (len(stops) < 1) and (len(spawns) < area.settings['min_spawnpoints']):
                 failed_nests["Not enough Spawnpoints"] += 1
                 continue
-            spawnpoint_in = "'{}'".format("','".join(str(nr) for nr in area_spawnpoints))
+            spawnpoint_in = "'{}'".format("','".join(spawns))
             if spawnpoint_in == "''": spawnpoint_in = "NULL" # This will handle the SQL warning since a blank string shouldn't be used for a number
 
             # Use data since last change:
@@ -179,7 +176,7 @@ def analyze_nests(config, area, nest_mons, queries):
                 "center_lon": park.lon,
             }
             failed_nests["Total Nests found"] += 1
-            nests.append(park.feature)
+            nests.append(park)
 
             queries.nest_insert(insert_args)
     stop = timeit.default_timer()

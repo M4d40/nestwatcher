@@ -6,6 +6,7 @@ class Area():
     def __init__(self, area, settings):
         self.name = area["name"]
         self.settings = settings
+        self.nests = []
 
         sql_fence = []
         polygon_ = []
@@ -20,6 +21,27 @@ class Area():
 
         bounds = self.polygon.bounds
         self.bbox = f"{bounds[0]},{bounds[1]},{bounds[2]},{bounds[3]}"
+    
+    def get_nest_text(self, template, entry):
+        def replace(dic):
+            for k, v in dic.items():
+                if isinstance(v, str):
+                    dic[k] = v.format(
+                        nest_entry=entries,
+                        areaname=self.name,
+                        staticmap=""
+                    )
+                elif isinstance(v, dict):
+                    dic[k] = replace(v)
+            return dic
+        entries = ""
+        for nest in self.nests:
+            if len(entries) < 1500:
+                entries += entry.format(
+                    park_name=nest.name,
+                    mon_name=nest.mon_id
+                )
+        return replace(template)
 
 class Park():
     def __init__(self, element, config):

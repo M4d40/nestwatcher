@@ -27,10 +27,10 @@ class Queries():
         if config.scanner == "rdm":
             pokestop_select = """SELECT id, lat, lon
             FROM pokestop
-            WHERE ST_CONTAINS(ST_GEOMFROMTEXT('POLYGON(({area}))'), point(lat, lon))"""
+            WHERE ST_CONTAINS(ST_GEOMFROMTEXT('MULTIPOLYGON(({area}))'), point(lat, lon))"""
             spawnpoint_select = """SELECT id, lat, lon
             FROM spawnpoint
-            WHERE ST_CONTAINS(ST_GEOMFROMTEXT('POLYGON(({area}))'), point(lat, lon))
+            WHERE ST_CONTAINS(ST_GEOMFROMTEXT('MULTIPOLYGON(({area}))'), point(lat, lon))
             """
             mon_select = """SELECT pokemon_id, COUNT(pokemon_id) AS count
             FROM pokemon

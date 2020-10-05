@@ -28,3 +28,5 @@ class Config:
         self.json_stroke_opacity = config_file.getfloat("Geojson", "stroke_opacity")
         self.json_fill = config_file.get("Geojson", "fill")
         self.json_fill_opacity = config_file.getfloat("Geojson", "fill_opacity")
+
+        self.discord_token = config_file.get("Discord", "token")
