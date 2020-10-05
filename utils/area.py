@@ -1,10 +1,39 @@
 import json
 import requests
 import random
+import math
 
 from shapely import geometry
 from shapely.ops import polylabel
 from geojson import Feature
+from urllib.parse import quote, quote_plus
+
+def get_zoom(ne, sw, width, height, tile_size):
+    ne = [c * 1.06 for c in ne]
+    sw = [c * 1.06 for c in sw]
+
+    if ne == sw:
+        return 17.5
+
+    def latRad(lat):
+        sin = math.sin(lat * math.pi / 180)
+        rad = math.log((1 + sin) / (1 - sin)) / 2
+        return max(min(rad, math.pi), -math.pi) / 2
+
+    def zoom(px, tile, fraction):
+        return round(math.log((px / tile / fraction), 2), 2)
+
+    lat_fraction = (latRad(ne[0]) - latRad(sw[0])) / math.pi
+
+    angle = ne[1] - sw[1] 
+    if angle < 0:
+        angle += 360
+    lon_fraction = angle / 360
+
+    lat_zoom = zoom(height, tile_size, lat_fraction)
+    lon_zoom = zoom(width, tile_size, lon_fraction)
+
+    return min(lat_zoom, lon_zoom)
 
 class Area():
     def __init__(self, area, settings):
@@ -23,10 +52,10 @@ class Area():
         self.polygon = geometry.Polygon(polygon_)
         self.sql_fence = ",".join(sql_fence)
 
-        bounds = self.polygon.bounds
-        self.bbox = f"{bounds[0]},{bounds[1]},{bounds[2]},{bounds[3]}"
+        self.min_lon, self.min_lat, self.max_lon, self.max_lat = self.polygon.bounds
+        self.bbox = f"{self.min_lon},{self.min_lat},{self.max_lon},{self.max_lat}"
     
-    def get_nest_text(self, template, lang, config):
+    def get_nest_text(self, template, config):
         def replace(dic):
             # Formats all strings in a dict
             for k, v in dic.items():
@@ -40,7 +69,7 @@ class Area():
                     dic[k] = replace(v)
             return dic
 
-        with open(f"data/mon_names/{lang}.json", "r") as f:
+        with open(f"data/mon_names/{config.language}.json", "r") as f:
             mon_names = json.load(f)
         shiny_data = requests.get("https://pogoapi.net/api/v1/shiny_pokemon.json").json()
 
@@ -70,19 +99,25 @@ class Area():
         polygons = [] # maybe?
         markers = []
         if config.static_url:
+            zoom = get_zoom(
+                [self.max_lat, self.max_lon],
+                [self.min_lat, self.min_lon],
+                1000,
+                800,
+                256
+            )
             for nest in self.nests:
                 points = []
                 while len(points) < nest.mon_avg - 1:
                     pnt = geometry.Point(random.uniform(nest.min_lon, nest.max_lon), random.uniform(nest.min_lat, nest.max_lat))
                     if nest.polygon.contains(pnt):
-                        points.append({
-                            "url": f"https://raw.githubusercontent.com/whitewillem/PogoAssets/resized/icons_large/pokemon_icon_{str(nest.mon_id).zfill(3)}_00.png",
-                            "height": 20,
-                            "width": 20,
-                            "latitude": pnt.y,
-                            "longitude": pnt.x
-                        })
+                        points.append([
+                            f"https://raw.githubusercontent.com/whitewillem/PogoAssets/resized/icons_large/pokemon_icon_{str(nest.mon_id).zfill(3)}_00.png",
+                            pnt.y,
+                            pnt.x
+                        ])
                 markers += points
+            
 
         # Text gen + filtering
 

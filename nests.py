@@ -122,7 +122,7 @@ if discord_message:
                     if message.author == bot.user:
                         found = True
                         break
-                embed = discord.Embed().from_dict(area.get_nest_text(discord_template, config.language))
+                embed = discord.Embed().from_dict(area.get_nest_text(discord_template, config))
                 if found:
                     await message.edit(embed=embed)
                 else:
