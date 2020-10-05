@@ -206,8 +206,8 @@ class Park():
                 center_point = self.polygon.centroid
             else:
                 center_point = polylabel(self.polygon, tolerance=1e-6)
-            self.lat = center_point.x
-            self.lon = center_point.y
+            self.lat = center_point.y
+            self.lon = center_point.x
 
         self.get_feature()
 
