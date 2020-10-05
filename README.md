@@ -8,6 +8,11 @@
 - cleaning up code, logs and configs
 - has PR26 for better marker results
 - fixes a bug where multipolygons could have had multiple nests displayed
+- area data is sorted by nest_avg so most important nests are on the top
+
+## todo
+- limit emoji creation to only needed ones (avoid 50 emoji limit)
+- discord tool to name parks / change the marker
 
 ## quick how to setup:
 - cp -r config_example config
