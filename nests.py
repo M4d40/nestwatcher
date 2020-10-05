@@ -113,9 +113,20 @@ if discord_message:
     bot = discord.Client()
 
     @bot.event
-    async def on_ready():
+    async def on_ready():        
         try:
             log.info("Connected to Discord. Generating Nest messages and sending them.")
+            emote_refs = {}
+            if len(config.emote_server) > 0:
+                log.info("Createing emotes")
+                server = await bot.fetch_guild(config.emote_server)
+                for mon_id in [nest.mon_id for nest in [area.nests for area in full_areas][0]]:
+                    emote_name = f"m{mon_id}"
+                    image_url = config.icon_repo + f"pokemon_icon_{str(mon_id).zfill(3)}_00.png"
+                    image = requests.get(image_url).content
+
+                    emote = await server.create_custom_emoji(name=emote_name, image=image)
+                    emote_refs[mon_id] = emote.id
             for area in full_areas:
                 d = area.settings["discord"]
                 if isinstance(d, int):
@@ -125,13 +136,19 @@ if discord_message:
                         if message.author == bot.user:
                             found = True
                             break
-                    embed = discord.Embed().from_dict(area.get_nest_text(discord_template, config))
+                    embed = discord.Embed().from_dict(area.get_nest_text(discord_template, config, emote_refs))
                     if found:
                         await message.edit(embed=embed)
                         log.success(f"Found existing Nest message for {area.name} and edited it")
                     else:
                         await channel.send(embed=embed)
                         log.success(f"Sent a new Nest message for {area.name}")
+            
+            if len(emote_refs) > 0:
+                log.info("Deleting emotes again")
+                for emote_id in emote_refs.values():
+                    emote = await server.fetch_emoji(emote_id)
+                    await emote.delete()
         except Exception as e:
             log.exception(e)
         await bot.logout()

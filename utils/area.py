@@ -55,7 +55,7 @@ class Area():
         bounds = self.polygon.bounds
         self.bbox = f"{bounds[1]},{bounds[0]},{bounds[3]},{bounds[2]}"
     
-    def get_nest_text(self, template, config):
+    def get_nest_text(self, template, config, emote_refs):
         with open(f"data/mon_names/{config.language}.json", "r") as f:
             mon_names = json.load(f)
         shiny_data = requests.get("https://pogoapi.net/api/v1/shiny_pokemon.json").json()
@@ -142,6 +142,11 @@ class Area():
             if shiny_data.get(str(nest.mon_id), {}).get("found_wild", False):
                 shiny_emote = "✨"
 
+            mon_emote = ""
+            emote_id = emote_refs.get(nest.mon_id, "")
+            if not emote_id == "":
+                mon_emote = f"<:m{nest.mon_id}:{emote_id}>"
+
             if len(entries) < 1500:
                 entries += filters["nest_entry"].format(
                     park_name=nest.name,
@@ -152,6 +157,7 @@ class Area():
                     mon_avg=nest.mon_avg,
                     mon_count=nest.mon_count,
                     mon_name=mon_names.get(str(nest.mon_id), ""),
+                    mon_emoji=mon_emote,
                     shiny=shiny_emote
                 )
         return replace(template[0])
@@ -260,7 +266,7 @@ class RelPark(Park):
             way = [w for w in ways if w.id == member["ref"]]
             if way == []:
                 self.is_valid = False
-                return
+                continue
             else:
                 way = way[0]
             new_ways.append(way.id)
@@ -287,6 +293,9 @@ class RelPark(Park):
             final_polygon = outer_polygon
         elif inner_polygon:
             final_polygon = inner_polygon
+        else:
+            self.is_valid = False
+            return
 
         self.polygon = final_polygon
 
