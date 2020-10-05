@@ -1,0 +1,23 @@
+{
+    "style": "osm-bright",
+    "latitude": #(lat),
+    "longitude": #(lon),
+    "zoom": #(zoom),
+    "width": 1000,
+    "height": 600,
+    "scale": 2,
+    "format": "png",
+    "markers": [
+        #if(nestjson != nil):
+        #for(nest in nestjson):
+        {
+            "url": "https://raw.githubusercontent.com/whitewillem/PogoAssets/resized/no_border/pokemon_icon_#index(nest, 0)_00.png",
+            "latitude": #index(nest, 1),
+            "longitude": #index(nest, 2),
+            "width": 30,
+            "height": 30
+        },
+        #endfor
+        #endif
+    ]
+}
