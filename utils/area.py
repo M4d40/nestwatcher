@@ -295,7 +295,7 @@ class RelPark(Park):
             final_polygon = inner_polygon
         else:
             self.is_valid = False
-            final_polygon = geometry.Polygon([[0, 0]])
+            final_polygon = geometry.Polygon([[0, 0], [0, 0], [0, 0]])
 
         self.polygon = final_polygon
 
