@@ -46,14 +46,14 @@ class Area():
         fence = area["path"]
 
         for lat, lon in fence:
-            polygon_.append((lat, lon))
+            polygon_.append((lon, lat))
             sql_fence.append(f"{lat} {lon}")
         
         self.polygon = geometry.Polygon(polygon_)
         self.sql_fence = ",".join(sql_fence)
 
-        self.min_lon, self.min_lat, self.max_lon, self.max_lat = self.polygon.bounds
-        self.bbox = f"{self.min_lon},{self.min_lat},{self.max_lon},{self.max_lat}"
+        bounds = self.polygon.bounds
+        self.bbox = f"{bounds[1]},{bounds[0]},{bounds[3]},{bounds[2]}"
     
     def get_nest_text(self, template, config):
         with open(f"data/mon_names/{config.language}.json", "r") as f:

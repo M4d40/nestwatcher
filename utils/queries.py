@@ -43,7 +43,7 @@ class Queries():
                 AND
                 pokemon_id IN {nest_mons}
                 AND
-                UNIX_TIMESTAMP(first_seen_timestamp) >= {reset_time})
+                first_seen_timestamp >= {reset_time})
             GROUP BY pokemon_id
             ORDER BY count desc
             LIMIT 1"""

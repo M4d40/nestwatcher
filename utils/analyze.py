@@ -106,6 +106,14 @@ def analyze_nests(config, area, nest_mons, queries):
         for park in parks:
             progress.update(check_nest_task, advance=1, description=f"Nests found: {failed_nests['Total Nests found']}")
 
+            if not park.is_valid:
+                failed_nests["Geometry is not valid"] += 1
+                continue
+
+            if not area.polygon.contains(park.polygon):
+                failed_nests["Not in Geofence"] += 1
+                continue
+
             pokestop_in = None
             stops = []
             if config.scanner == "rdm" and config.pokestop_pokemon:
