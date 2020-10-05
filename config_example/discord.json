@@ -7,7 +7,7 @@
 },
 {
     "nest_entry": "**{park_name}**: {mon_name}\n",
-    "sorty_by": "nest_avg",
+    "sort_by": "nest_avg",
     "min_avg": 3,
     "ignore_unnamed": false
 }]

@@ -117,6 +117,8 @@ class Area():
                             pnt.x
                         ])
                 markers += points
+            center = self.polygon.centroid
+            static_map = config.static_url + "staticmap/nests?" + f"lat={center.x}&lon={center.y}"
             
 
         # Text gen + filtering
