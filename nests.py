@@ -1,7 +1,6 @@
 import json
 import argparse
 import requests
-import sys
 import discord
 
 from datetime import datetime
@@ -130,6 +129,9 @@ if discord_message:
                     emote = await server.create_custom_emoji(name=emote_name, image=image)
                     emote_refs[mon_id] = emote.id"""
             for area in full_areas:
+                if len(area.nests) == 0:
+                    log.warning(f"Did not find any nests in {area.name} - Skipping notifications")
+                    continue
                 d = area.settings["discord"]
                 if isinstance(d, int):
                     channel = await bot.fetch_channel(d)

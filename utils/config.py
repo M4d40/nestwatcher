@@ -1,7 +1,7 @@
 from configparser import ConfigParser
 
 class Config:
-    def __init__(self, config_path):
+    def __init__(self, config_path="config/config.ini"):
         config_file = ConfigParser()
         config_file.read(config_path)
 
