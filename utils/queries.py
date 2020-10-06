@@ -97,7 +97,7 @@ class Queries():
 
     def spawns(self, area):
         query = self.queries["spawns"].format(area=area)
-        print(query + "\n\n")
+        #print(query + "\n\n")
         self.cursor.execute(query)
         return self.cursor.fetchall()
     

@@ -306,13 +306,16 @@ class RelPark(Park):
 
         sql_fence = []
         sql_fences = []
+        print(f"poly amount: {len(polygons)}")
         for polygon in polygons:
             if polygon.is_valid:
                 coords = polygon.exterior.coords
                 for lon, lat in coords:
                     sql_fence.append(f"{lat} {lon}")
-                sql_fence.append(f"{coords[0][1]} {coords[0][0]}")
-            sql_fences.append("(" + ",".join(sql_fence) + ")")
+                first_point = f"{coords[0][1]} {coords[0][0]}"
+                if first_point != sql_fence[0]:
+                    sql_fence.append(first_point)
+                sql_fences.append("(" + ",".join(sql_fence) + ")")
         self.sql_fence = ",".join(sql_fences)
 
         return new_ways
