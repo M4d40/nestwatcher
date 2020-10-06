@@ -13,6 +13,9 @@
 ## todo
 - discord tool to name parks / change the marker (?)
 - show polygons on static maps
+- custom emotes for typing/shiny + typing emotes
+- 1 marker feature (like in dp alpha)
+- webhooks instead of discord bot
 
 ## quick how to setup:
 - cp -r config_example config
