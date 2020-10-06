@@ -208,8 +208,8 @@ class Park():
         if self.id in area_file.keys():
             entry = area_file[self.id]
             self.name = entry["name"]
-            self.lat = float(entry["center_lat"])
-            self.lon = float(entry["center_lon"])
+            self.lat = round(float(entry["center_lat"]), 6)
+            self.lon = round(float(entry["center_lon"]), 6)
         else:
             tags = self._element.get("tags", {})
             self.name = tags.get("name", tags.get("official_name", self._default_name))
@@ -219,8 +219,8 @@ class Park():
                 center_point = self.polygon.centroid
             else:
                 center_point = polylabel(self.polygon, tolerance=1e-6)
-            self.lat = center_point.y
-            self.lon = center_point.x
+            self.lat = round(center_point.y, 6)
+            self.lon = round(center_point.x, 6)
 
         self.get_feature()
 
