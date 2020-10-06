@@ -27,8 +27,6 @@ with open("config/areas.json", "r") as f:
     areas = json.load(f)
 with open("config/settings.json", "r") as f:
     settings = json.load(f)
-with open("config/discord.json", "r") as f:
-    discord_template = json.load(f)
 
 discord_webhook = False
 discord_message = False
@@ -140,7 +138,8 @@ if discord_message:
                         if message.author == bot.user:
                             found = True
                             break
-                    embed = discord.Embed().from_dict(area.get_nest_text(discord_template, config, emote_refs))
+                    embed_dict = area.get_nest_text(config, emote_refs)
+                    embed = discord.Embed().from_dict(embed_dict)
                     if found:
                         await message.edit(embed=embed)
                         log.success(f"Found existing Nest message for {area.name} and edited it")

@@ -55,9 +55,11 @@ class Area():
         bounds = self.polygon.bounds
         self.bbox = f"{bounds[1]},{bounds[0]},{bounds[3]},{bounds[2]}"
     
-    def get_nest_text(self, template, config, emote_refs):
+    def get_nest_text(self, config, emote_refs):
         with open(f"data/mon_names/{config.language}.json", "r") as f:
             mon_names = json.load(f)
+        with open("config/discord.json", "r") as f:
+            template = json.load(f)
         shiny_data = requests.get("https://pogoapi.net/api/v1/shiny_pokemon.json").json()
 
         filters = template[1]
