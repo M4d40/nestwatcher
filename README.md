@@ -16,6 +16,7 @@
 - custom emotes for typing/shiny + typing emotes
 - 1 marker feature (like in dp alpha)
 - webhooks instead of discord bot
+- same channel different area notifications
 
 ## quick how to setup:
 - cp -r config_example config
