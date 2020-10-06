@@ -159,19 +159,20 @@ class Area():
             if not emote_id == "":
                 mon_emote = f"<:m{nest.mon_id}:{emote_id}>"
 
-            if len(entries) < 1800:
-                entries += filters["nest_entry"].format(
-                    park_name=nest.name,
-                    lat=nest.lat,
-                    lon=nest.lon,
+            entry = filters["nest_entry"].format(
+                park_name=nest.name,
+                lat=nest.lat,
+                lon=nest.lon,
 
-                    mon_id=nest.mon_id,
-                    mon_avg=nest.mon_avg,
-                    mon_count=nest.mon_count,
-                    mon_name=mon_names.get(str(nest.mon_id), ""),
-                    mon_emoji=mon_emote,
-                    shiny=shiny_emote
-                )
+                mon_id=nest.mon_id,
+                mon_avg=nest.mon_avg,
+                mon_count=nest.mon_count,
+                mon_name=mon_names.get(str(nest.mon_id), ""),
+                mon_emoji=mon_emote,
+                shiny=shiny_emote
+            )
+            if len(entries) + len(entry) <= 2048:
+                entries += entry
         return replace(template[0])
 
 class Park():
