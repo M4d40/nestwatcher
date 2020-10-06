@@ -134,12 +134,15 @@ if discord_message:
                 if isinstance(d, int):
                     channel = await bot.fetch_channel(d)
                     found = False
-                    async for message in channel.history():
-                        if message.author == bot.user:
-                            found = True
-                            break
                     embed_dict = area.get_nest_text(config, emote_refs)
                     embed = discord.Embed().from_dict(embed_dict)
+                    async for message in channel.history():
+                        if message.author == bot.user:
+                            embeds = message.embeds
+                            if len(embeds) > 0:
+                                if embeds[0].title == embed.title:
+                                    found = True
+                                    break
                     if found:
                         await message.edit(embed=embed)
                         log.success(f"Found existing Nest message for {area.name} and edited it")
