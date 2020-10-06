@@ -15,7 +15,6 @@
 - show polygons on static maps
 - custom emotes for typing/shiny + typing emotes
 - webhooks instead of discord bot
-- same channel different area notifications
 
 ## quick how to setup:
 - cp -r config_example config
