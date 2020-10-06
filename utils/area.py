@@ -307,8 +307,9 @@ class RelPark(Park):
         sql_fence = []
         sql_fences = []
         for polygon in polygons:
-            for lon, lat in polygon.exterior.coords:
-                sql_fence.append(f"{lat} {lon}")
+            if polygon.is_valid:
+                for lon, lat in polygon.exterior.coords:
+                    sql_fence.append(f"{lat} {lon}")
             sql_fences.append("(" + ",".join(sql_fence) + ")")
         self.sql_fence = ",".join(sql_fences)
 
