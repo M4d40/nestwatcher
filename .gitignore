@@ -6,5 +6,6 @@ default.ini
 # Ignore the area folders
 area_data/*.csv
 osm_data/*.json
+data/emotes.json
 
 */__pycache__/*
