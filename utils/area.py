@@ -101,25 +101,30 @@ class Area():
                 600,
                 256
             )
+            def add_to_points(points, monid, lat, lon):
+                points.append([
+                    str(monid).zfill(3),
+                    round(lat, 6),
+                    round(lon, 6)
+                ])
+                return points
             for nest in self.nests:
                 points = []
-                if nest.mon_avg > config.max_markers:
-                    avg = config.max_markers
+                if config.max_markers == 1:
+                    points = add_to_points(points, nest.mon_id, nest.lat, nest.lon)
                 else:
-                    avg = round(nest.mon_avg)
-                while len(points) <= avg - 1:
-                    pnt = geometry.Point(random.uniform(nest.min_lon, nest.max_lon), random.uniform(nest.min_lat, nest.max_lat))
-                    if nest.polygon.contains(pnt):
-                        points.append([
-                            str(nest.mon_id).zfill(3),
-                            round(pnt.y, 6),
-                            round(pnt.x, 6)
-                        ])
+                    if nest.mon_avg > config.max_markers:
+                        avg = config.max_markers
+                    else:
+                        avg = round(nest.mon_avg)
+                    while len(points) <= avg - 1:
+                        pnt = geometry.Point(random.uniform(nest.min_lon, nest.max_lon), random.uniform(nest.min_lat, nest.max_lat))
+                        if nest.polygon.contains(pnt):
+                            points = add_to_points(points, nest.mon_id, pnt.y, pnt.x)
                 markers += points
             center_lat = minlat + ((maxlat - minlat) / 2)
             center_lon = minlon + ((maxlon - minlon) / 2)
             static_map = config.static_url + "staticmap/nests?" + f"lat={center_lat}&lon={center_lon}&zoom={zoom}&nestjson={quote_plus(json.dumps(markers)).replace('+','')}&pregenerate=true&regeneratable=true"
-            print(static_map)
             result = requests.get(static_map)
             static_map = config.static_url + f"staticmap/pregenerated/{result.text}"
             requests.get(static_map)

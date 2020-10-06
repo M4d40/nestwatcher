@@ -6,7 +6,7 @@
     }
 },
 {
-    "nest_entry": "**{park_name}**: {mon_name}\n",
+    "nest_entry": "{mon_emoji} {mon_name} (~{mon_avg}/hr): **{park_name}**: \n",
     "sort_by": "mon_avg",
     "min_avg": 3,
     "ignore_unnamed": false
