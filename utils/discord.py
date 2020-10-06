@@ -10,6 +10,7 @@ async def get_emotes(bot, nesting_mons, config):
             emote_servers = json.load(f)
     except (IOError, OSError):
         emote_servers = {}
+        log.info("This seems to be your first run. Your bot will now create 2 servers and fill them with emotes, so prepare for some wait time.")
     emotes = {}
     final_emotes = {}
     for server, data in emote_servers.items():
@@ -20,7 +21,6 @@ async def get_emotes(bot, nesting_mons, config):
                 "server_id": int(server)
             }
     log.info("Comparing your bot's emotes to needed nesting mons.")
-    log.info(f"If this is your first run, your bot will create 2 servers and upload {len(nesting_mons)} emotes. So this will take a while.")
     for monid in nesting_mons:
         if monid in emotes.keys():
             emotes.pop(monid)

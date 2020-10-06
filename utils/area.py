@@ -107,7 +107,7 @@ class Area():
                     avg = config.max_markers
                 else:
                     avg = round(nest.mon_avg)
-                while len(points) < avg - 1:
+                while len(points) <= avg - 1:
                     pnt = geometry.Point(random.uniform(nest.min_lon, nest.max_lon), random.uniform(nest.min_lat, nest.max_lat))
                     if nest.polygon.contains(pnt):
                         points.append([
