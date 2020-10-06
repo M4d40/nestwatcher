@@ -13,7 +13,10 @@
 ## todo
 - discord tool to name parks / change the marker (?)
 - show polygons on static maps
-- multiple areas + multiple channels throw errors
+- custom emotes for typing/shiny + typing emotes
+- 1 marker feature (like in dp alpha)
+- webhooks instead of discord bot
+- same channel different area notifications
 
 ## quick how to setup:
 - cp -r config_example config
