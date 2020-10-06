@@ -32,4 +32,5 @@ class Config:
         self.discord_token = config_file.get("Discord", "token")
         self.language = config_file.get("Discord", "language")
         self.static_url = config_file.get("Discord", "tileserver_url")
+        self.max_markers = config_file.getint("Discord", "max_markers_per_nest")
         self.icon_repo = config_file.get("Discord", "icon_repo")
