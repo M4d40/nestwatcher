@@ -300,7 +300,7 @@ class RelPark(Park):
         self.polygon = final_polygon
 
         if isinstance(self.polygon, geometry.MultiPolygon):
-            polygons = self.polygon.geoms
+            polygons = list(self.polygon)
         else:
             polygons = [self.polygon]
 
@@ -316,6 +316,7 @@ class RelPark(Park):
                 if first_point != sql_fence[0]:
                     sql_fence.append(first_point)
                 sql_fences.append("(" + ",".join(sql_fence) + ")")
+            print(sql_fences)
         self.sql_fence = ",".join(sql_fences)
 
         return new_ways
