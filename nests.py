@@ -89,7 +89,7 @@ log.debug(nest_mons)
 # DB
 log.info("Establishing DB connection and deleting current nests")
 queries = Queries(config)
-#queries.nest_delete()
+queries.nest_delete()
 
 all_features = []
 full_areas = []
@@ -124,13 +124,6 @@ if discord_message:
                     emote_name = f"m{mon_id}"
                     image_url = config.icon_repo + f"pokemon_icon_{str(mon_id).zfill(3)}_00.png"
                     image = requests.get(image_url).content
-                    print(image_url)
-                    print(image)
-
-                    import PIL.Image as Image
-                    import io
-                    im = Image.open(io.BytesIO(image))
-                    im.save("test.png")
 
                     emote = await server.create_custom_emoji(name=emote_name, image=image)
                     emote_refs[mon_id] = emote.id
