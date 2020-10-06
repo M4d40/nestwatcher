@@ -96,7 +96,9 @@ class Queries():
         return self.cursor.fetchall()
 
     def spawns(self, area):
-        self.cursor.execute(self.queries["spawns"].format(area=area))
+        query = self.queries["spawns"].format(area=area)
+        print(query + "\n\n")
+        self.cursor.execute(query)
         return self.cursor.fetchall()
     
     def mons(self, spawns, mons, time, pokestops=None):
