@@ -103,7 +103,11 @@ class Area():
             )
             for nest in self.nests:
                 points = []
-                while len(points) < nest.mon_avg - 1:
+                if nest.mon_avg > 10:
+                    avg = 9
+                else:
+                    avg = round(nest.mon_avg) - 1
+                while len(points) < avg:
                     pnt = geometry.Point(random.uniform(nest.min_lon, nest.max_lon), random.uniform(nest.min_lat, nest.max_lat))
                     if nest.polygon.contains(pnt):
                         points.append([
