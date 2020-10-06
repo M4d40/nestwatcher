@@ -50,7 +50,7 @@ def analyze_nests(config, area, nest_mons, queries):
                 quoting=csv.QUOTE_MINIMAL,
             )
             for line in dict_reader:
-                area_file_data[line["osm_id"]] = {
+                area_file_data[int(line["osm_id"])] = {
                     "name": line["name"],
                     "center_lat": line["center_lat"],
                     "center_lon": line["center_lon"],
@@ -204,7 +204,7 @@ def analyze_nests(config, area, nest_mons, queries):
         for nest in sorted(nests, key=sort_avg, reverse=True):
             dict_writer.writerow({
                 "osm_id": nest.id,
-                "name": u"" + nest.name,
+                "name": nest.name,
                 "center_lat": nest.lat,
                 "center_lon": nest.lon,
             })

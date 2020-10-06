@@ -192,7 +192,7 @@ class Park():
                     24.00 / float(hours)), 2)
 
     def generate_details(self, area_file):
-        if self.id in area_file:
+        if self.id in area_file.keys():
             entry = area_file[self.id]
             self.name = entry["name"]
             self.lat = float(entry["center_lat"])

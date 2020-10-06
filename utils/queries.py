@@ -68,7 +68,7 @@ class Queries():
 
         nest_delete = "DELETE FROM nests"
         nest_insert = """INSERT INTO nests (
-            nest_id, name, lon, lat, pokemon_id, type, pokemon_count, pokemon_avg, updated)
+            nest_id, name, lat, lon, pokemon_id, type, pokemon_count, pokemon_avg, updated)
         VALUES(
             %(nest_id)s, %(name)s, %(lat)s, %(lon)s,
             %(pokemon_id)s, %(type)s, %(pokemon_count)s, %(pokemon_avg)s, %(current_time)s)
