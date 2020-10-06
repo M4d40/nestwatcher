@@ -12,6 +12,7 @@ from utils.analyze import analyze_nests
 from utils.config import Config
 from utils.logging import log
 from utils.queries import Queries
+from utils.discord import get_emotes
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-c", "--config", default="config/config.ini", help="Config file to use")
@@ -113,11 +114,14 @@ if discord_message:
     bot = discord.Client()
 
     @bot.event
-    async def on_ready():        
+    async def on_ready():
+        """for guild in bot.guilds:
+            if bot.user.id == guild.owner_id:
+                await guild.delete()   """  
         try:
             log.info("Connected to Discord. Generating Nest messages and sending them.")
-            emote_refs = {}
-            if len(config.emote_server) > 0:
+            emote_refs = await get_emotes(bot, nesting_mons, config)
+            """if len(config.emote_server) > 0:
                 log.info("Createing emotes")
                 server = await bot.fetch_guild(config.emote_server)
                 for mon_id in [nest.mon_id for nest in [area.nests for area in full_areas][0]]:
@@ -126,7 +130,7 @@ if discord_message:
                     image = requests.get(image_url).content
 
                     emote = await server.create_custom_emoji(name=emote_name, image=image)
-                    emote_refs[mon_id] = emote.id
+                    emote_refs[mon_id] = emote.id"""
             for area in full_areas:
                 d = area.settings["discord"]
                 if isinstance(d, int):
@@ -144,11 +148,11 @@ if discord_message:
                         await channel.send(embed=embed)
                         log.success(f"Sent a new Nest message for {area.name}")
             
-            if len(emote_refs) > 0:
+            """if len(emote_refs) > 0:
                 log.info("Deleting emotes again")
                 for emote_id in emote_refs.values():
                     emote = await server.fetch_emoji(emote_id)
-                    await emote.delete()
+                    await emote.delete()"""
         except Exception as e:
             log.exception(e)
         await bot.logout()
