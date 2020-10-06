@@ -159,7 +159,7 @@ class Area():
             if not emote_id == "":
                 mon_emote = f"<:m{nest.mon_id}:{emote_id}>"
 
-            if len(entries) < 1500:
+            if len(entries) < 1800:
                 entries += filters["nest_entry"].format(
                     park_name=nest.name,
                     lat=nest.lat,
