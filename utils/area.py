@@ -308,8 +308,10 @@ class RelPark(Park):
         sql_fences = []
         for polygon in polygons:
             if polygon.is_valid:
-                for lon, lat in polygon.exterior.coords:
+                coords = polygon.exterior.coords
+                for lon, lat in coords:
                     sql_fence.append(f"{lat} {lon}")
+                sql_fence.append(f"{coords[0][1]} {coords[0][0]}")
             sql_fences.append("(" + ",".join(sql_fence) + ")")
         self.sql_fence = ",".join(sql_fences)
 
