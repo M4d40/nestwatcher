@@ -114,7 +114,8 @@ class Area():
                 markers += points
             center_lat = minlat + ((maxlat - minlat) / 2)
             center_lon = minlon + ((maxlon - minlon) / 2)
-            static_map = config.static_url + "staticmap/nests?" + f"lat={center_lat}&lon={center_lon}&zoom={zoom}&nestjson={quote_plus(json.dumps(markers))}&pregenerate=true&regeneratable=true"
+            static_map = config.static_url + "staticmap/nests?" + f"lat={center_lat}&lon={center_lon}&zoom={zoom}&nestjson={quote_plus(json.dumps(markers)).replace('+','')}&pregenerate=true&regeneratable=true"
+            print(static_map)
             result = requests.get(static_map)
             static_map = config.static_url + f"staticmap/pregenerated/{result.text}"
             requests.get(static_map)
