@@ -2,5 +2,6 @@ requests
 shapely
 pymysql
 geojson
-bs4
-python-dateutil
+discord.py
+rich
+coloredlogs
