@@ -12,7 +12,6 @@
 
 ## todo
 - discord tool to name parks / change the marker (?)
-- show polygons on static maps
 - custom emotes for typing/shiny + typing emotes
 - webhooks instead of discord bot
 
