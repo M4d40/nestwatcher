@@ -3,9 +3,10 @@ OSM_DATA_*.json
 default.ini
 
 
-# Ignore the area folders
-area_data/*.csv
-osm_data/*.json
+# Ignore the data folders
+data/area_data/*.csv
+data/osm_data/*.json
 data/emotes.json
+data/custom_emotes.json
 
 */__pycache__/*

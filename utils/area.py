@@ -60,7 +60,40 @@ class Area():
             mon_names = json.load(f)
         with open("config/discord.json", "r") as f:
             template = json.load(f)
+        try:
+            with open("data/custom_emotes.json", "r") as f:
+                emote_data = json.load(f)
+        except:
+            emote_data = {
+                "Shiny": "✨",
+                "Grass": "🌿",
+                "Poison": "☠",
+                "Fire": "🔥",
+                "Flying": "🐦",
+                "Water": "💧",
+                "Bug": "🐛",
+                "Normal": "⭕",
+                "Dark": "🌑",
+                "Electric": "⚡",
+                "Rock": "🗿",
+                "Ground": "🌍",
+                "Fairy": "🦋",
+                "Fighting": "👊",
+                "Psychic": "☯",
+                "Steel": "🔩",
+                "Ice": "❄",
+                "Ghost": "👻",
+                "Dragon": "🐲"
+            }
+            with open("data/custom_emotes.json", "w+") as f:
+                f.write(json.dumps(emote_data, indent=4))
         shiny_data = requests.get("https://pogoapi.net/api/v1/shiny_pokemon.json").json()
+        type_data_raw = requests.get("https://pogoapi.net/api/v1/pokemon_types.json").json()
+
+        type_data = {}
+        for data in type_data_raw:
+            if data.get("form", "").lower() == "normal":
+                type_data[int(data.get("pokemon_id", 0))] = data.get("type", [])
 
         filters = template[1]
         entries = ""
@@ -86,7 +119,7 @@ class Area():
         self.nests = sorted(self.nests, key=sort_[0], reverse=sort_[1])
 
         # statimap gen
-        #polygons = [] # maybe?
+        #polygons = []
         markers = []
         static_map = ""
         if len(config.static_url) > 0:
@@ -124,7 +157,9 @@ class Area():
                 markers += points
             center_lat = minlat + ((maxlat - minlat) / 2)
             center_lon = minlon + ((maxlon - minlon) / 2)
-            static_map = config.static_url + "staticmap/nests?" + f"lat={center_lat}&lon={center_lon}&zoom={zoom}&nestjson={quote_plus(json.dumps(markers)).replace('+','')}&pregenerate=true&regeneratable=true"
+            def parse(var):
+                return quote_plus(json.dumps(var)).replace('+','')
+            static_map = config.static_url + "staticmap/nests?" + f"lat={center_lat}&lon={center_lon}&zoom={zoom}&nestjson={parse(markers)}&pregenerate=true&regeneratable=true"
             result = requests.get(static_map)
             static_map = config.static_url + f"staticmap/pregenerated/{result.text}"
             requests.get(static_map)
@@ -152,7 +187,13 @@ class Area():
 
             shiny_emote = ""
             if shiny_data.get(str(nest.mon_id), {}).get("found_wild", False):
-                shiny_emote = "✨"
+                emote_data.get("Shiny", "")
+
+            type_emotes = []
+            types = type_data.get(nest.mon_id)
+            for t in types:
+                type_emotes.append(emote_data.get(t, ""))
+            type_emote = "/".join(type_emotes)
 
             mon_emote = ""
             emote_id = emote_refs.get(nest.mon_id, "")
@@ -169,6 +210,7 @@ class Area():
                 mon_count=nest.mon_count,
                 mon_name=mon_names.get(str(nest.mon_id), ""),
                 mon_emoji=mon_emote,
+                type_emoji=type_emote,
                 shiny=shiny_emote
             )
             if len(entries) + len(entry) <= 2048:

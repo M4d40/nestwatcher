@@ -19,7 +19,7 @@ def analyze_nests(config, area, nest_mons, queries):
 
     # Getting OSM/overpass data
     
-    osm_file_name = f"osm_data/{area.name} {OSM_DATE.replace(':', '')}.json"
+    osm_file_name = f"data/osm_data/{area.name} {OSM_DATE.replace(':', '')}.json"
     try:
         with open(osm_file_name, mode="r", encoding="utf-8") as osm_file:
             nest_json = json.load(osm_file)
@@ -39,7 +39,7 @@ def analyze_nests(config, area, nest_mons, queries):
 
     # Getting area data
 
-    area_file_name = f"area_data/{area.name}.csv"
+    area_file_name = f"data/area_data/{area.name}.csv"
     area_file_data = {}
     try:
         with open(area_file_name, mode="r", encoding="utf-8") as area_file:
