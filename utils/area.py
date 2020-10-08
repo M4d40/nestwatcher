@@ -187,7 +187,7 @@ class Area():
 
             shiny_emote = ""
             if shiny_data.get(str(nest.mon_id), {}).get("found_wild", False):
-                emote_data.get("Shiny", "")
+                shiny_emote = emote_data.get("Shiny", "")
 
             type_emotes = []
             types = type_data.get(nest.mon_id)
