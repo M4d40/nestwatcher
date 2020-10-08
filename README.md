@@ -67,7 +67,10 @@ There's two things in here. The first part is the embed template of the nest mes
 - **min_avg**: The minimum hourly average a nest needs to be posted
 - **ignore_unnamed**: Whether or not to ignore parks with unknown names
 
-### Emote file
+### Data files
+#### area_data
+For each area you analyze, a csv file will be saved in data/area_data. In it, you can customize Each nest's name and center coordinates. TIP: To easily view the nests, copy the saved ID and put it in this URL: `https://www.openstreetmap.org/way/ID` or `https://www.openstreetmap.org/relation/ID`
+#### custom_emotes.json
 After you first run the script, a file called `custom_emotes.json` will be created in the data/ folder. You can set your own pokemon type emotes and shiny emote in there.
 
 ## Running the script
