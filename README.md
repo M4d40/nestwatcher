@@ -1,25 +1,69 @@
-# my branch (wip)
+# Nest Script
+A Program to analyze nests in your area, save it to a database and send Discord notifications about them.
 
-## changes:
-- runtime improvements (about 1/4 the runtime for me)
-- better area support (no extra multipolygon areas, geofences instead of bboxes, no extra config files)
-- discord output now works with a bot which edits an existing nest message. it also has static map support. static maps show nests by showing X amounts of the sprite on its nest. where X = hourly average (only works with flos tileserver)
-- less reliability on local files
-- cleaning up code, logs and configs
-- has PR26 for better marker results
-- fixes a bug where multipolygons could have had multiple nests displayed
-- area data is sorted by nest_avg so most important nests are on the top
+## Setup:
+### The usual steps
+- `cp -r config_example config`
+- fill out the config files (details are explained below)
+- `pip3 install -r requirements.txt --upgrade`
 
-## todo
-- discord tool to name parks / change the marker (?)
-- custom emotes for typing/shiny + typing emotes
-- webhooks instead of discord bot
+### Database
+The Program requires PMSF's table structure to rn. If you already have PMSF running, you can use its manualdb. If not, `mysql your_db_name < nests.sql`.
 
-## quick how to setup:
-- cp -r config_example config
-- fill out config/config.ini
-- config/areas.json is a poracle/stopwatcher/discordopole-like geofence file. every geofence in it will be scanned for nests
-- config/settings.json can be used to fine-tune nest requirements (like min avg, min spawnpoints, etc). just follow the default file should be fine
-- run nests.py
-- you'll probably have to install some modules. i have yet to do a reqirements.txt
-- to get static maps, copy nests.json to your tileserver's Templates folder
+### Config files
+#### config.ini
+Most values are self-explanatory. Just note that:
+- pokestop_pokemon only works for RDM. Ignore this if you're using MAD.
+- The Geojson path should be the full path to PMSF's nest file. If you don't run PMSF, just put `geojson.json` to have it saved in the nest script directory
+- Discord token: Leave blank if you don't want Discord notifications
+- tileserver_url: Leave blank if you don't have a tileserver
+- max_markers_per_nest: If you scan a big area and static maps look like a mess, you can put 1
+
+#### areas.json
+Every area configured here will be scanned for nests. It's the same format e.g. Poracle/Discordopole/stopwatcher use. You can copy from there, if you have those scripts set up.
+
+#### settings.json
+Settings can be used to fine-tune each area. Everything here is optional. Values configured in the default setting will be used for all areas. Possible keys:
+- **area**: The name of the area
+- **min_pokemon**: The total amount of nesting Pokemon that have to be found in the given timespan
+- **min_spawnpoints**: The minimum amount of spawnpoints that have to exist in a nest
+- **min_average**: Minimum hourly spawn average the Nest must have
+- **scan_hors_per_day**: How many hours you scan that area per day
+- **discord**: The Channel ID nest messages will be sent in
+
+#### discord.json
+There's two things in here. The first part is the embed template of the nest messages. You can use an embed generator like [this one](https://leovoel.github.io/embed-visualizer/) to generate it. The second part includes the template for a single nest and other settings to customize the message.
+##### DTS for the first part
+- `{nest_entry}` - The nest entry you can configure in the second part
+- `{areaname}` - The area's name configured in areas.json
+- `{staticmap}` - The static map (if you have one)
+##### Second part
+- **nest_entry**: The nest entry for the first part. Possible DTS:
+    - `{park_name}` - The nest's name from OSM
+    - `{lat}` - The nest's center lat
+    - `{lon}` - The nest's center lon
+    - `{mon_id}` - The nesting pokemon's ID
+    - `{mon_avg}` - The nests's hourly average of nest spawns
+    - `{mon_count}` - Total amount of nest spawns in the given timespan
+    - `{mon_name}` - The nesting pokemon's name (in the language from your config)
+    - `{mon_emoji}` - The nesting pokemon's icon (as an emote)
+    - `{type_emoji}` - The nesting pokemon's type as an emoji (or multiple emojis)
+    - `{shiny}` - Whether or not the nesting pokemon can be shiny (shown as an emoji)
+- **sort_by**: The value nests are sorted by. Possible values:
+    - `sort_vg`
+    - `mon_count`
+    - `mon_id`
+    - `mon_name`
+- **min_avg**: The minimum hourly average a nest needs to be posted
+- **ignore_unnamed**: Whether or not to ignore parks with unknown names
+
+### Data files
+#### area_data
+For each area you analyze, a csv file will be saved in data/area_data. In it, you can customize Each nest's name and center coordinates. TIP: To easily view the nests, copy the saved ID and put it in this URL: `https://www.openstreetmap.org/way/ID` or `https://www.openstreetmap.org/relation/ID`
+#### custom_emotes.json
+After you first run the script, a file called `custom_emotes.json` will be created in the data/ folder. You can set your own pokemon type emotes and shiny emote in there.
+
+## Running the script
+- Start the script using `python3 nests.py`. Two arguments are supported:
+- `-t`/`--hours` to specify the timespan since last nest migration
+- `-c`/`--config` if you want to use another config file
