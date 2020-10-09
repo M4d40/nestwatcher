@@ -95,8 +95,9 @@ queries.nest_delete()
 # Meganests
 if config.in_meganest:
     log.info("You're living in a meganest. Getting the mosg scanned mon from your DB and ignoring it for the rest of the run")
-    most_mon = queries.most_mon(str(tuple(nest_mons)), str(reset_time))[0]
-    nest_mons.remove(most_mon)
+    most_mon = str(queries.most_mon(str(tuple(nest_mons)), str(reset_time))[0])
+    if nest_mon in nest_mons:
+        nest_mons.remove(most_mon)
 
 all_features = []
 full_areas = []
