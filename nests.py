@@ -2,6 +2,7 @@ import json
 import argparse
 import requests
 import discord
+import time
 
 from datetime import datetime
 from geojson import FeatureCollection, dumps
@@ -26,6 +27,8 @@ with open("config/areas.json", "r") as f:
     areas = json.load(f)
 with open("config/settings.json", "r") as f:
     settings = json.load(f)
+
+reset_time = int(time.time()) - (config.hours_since_change*3600)
 
 discord_webhook = False
 discord_message = False
@@ -89,11 +92,17 @@ log.info("Establishing DB connection and deleting current nests")
 queries = Queries(config)
 queries.nest_delete()
 
+# Meganests
+if config.in_meganest:
+    log.info("You're living in a meganest. Getting the mosg scanned mon from your DB and ignoring it for the rest of the run")
+    most_mon = queries.most_mon(str(tuple(nest_mons)), str(reset_time))[0]
+    nest_mons.remove(most_mon)
+
 all_features = []
 full_areas = []
 for i, area in enumerate(areas):
     area_ = Area(area, area_settings[area["name"]])
-    nests = analyze_nests(config, area_, nest_mons, queries)
+    nests = analyze_nests(config, area_, nest_mons, queries, reset_time)
     area_.nests = nests
     full_areas.append(area_)
 

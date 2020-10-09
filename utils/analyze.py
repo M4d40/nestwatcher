@@ -15,7 +15,7 @@ from utils.area import WayPark, RelPark
 
 OSM_DATE = "2019-02-24T00:00:00Z"
 
-def analyze_nests(config, area, nest_mons, queries):
+def analyze_nests(config, area, nest_mons, queries, reset_time):
 
     # Getting OSM/overpass data
     
@@ -135,8 +135,6 @@ def analyze_nests(config, area, nest_mons, queries):
             spawnpoint_in = "'{}'".format("','".join(spawns))
             if spawnpoint_in == "''": spawnpoint_in = "NULL" # This will handle the SQL warning since a blank string shouldn't be used for a number
 
-            # Use data since last change:
-            reset_time = int(time.time()) - (config.hours_since_change*3600)
             # RDM uses pokestop_ids, MAD not
             """if config.pokestop_pokemon:
                 _city_progress(idx, areas_len, "({}/{}) {}".format(

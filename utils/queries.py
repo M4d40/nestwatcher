@@ -47,6 +47,15 @@ class Queries():
             GROUP BY pokemon_id
             ORDER BY count desc
             LIMIT 1"""
+            most_mon = """SELECT pokemon_id, COUNT(pokemon_id) AS count
+            FROM pokemon
+            WHERE (
+                pokemon_id IN {nest_mons}
+                AND
+                first_seen_timestamp >= {reset_time})
+            GROUP BY pokemon_id
+            ORDER BY count desc
+            LIMIT 1"""
 
         elif config.scanner == "mad":
             pokestop_select = ""
@@ -59,6 +68,15 @@ class Queries():
             WHERE (
                 spawnpoint_id IN ({spawnpoints})
                 AND
+                pokemon_id IN {nest_mons}
+                AND
+                UNIX_TIMESTAMP(disappear_time) >= {reset_time})
+            GROUP BY pokemon_id
+            ORDER BY count desc
+            LIMIT 1"""
+            most_mon = """SELECT pokemon_id, COUNT(pokemon_id) AS count
+            FROM pokemon
+            WHERE (
                 pokemon_id IN {nest_mons}
                 AND
                 UNIX_TIMESTAMP(disappear_time) >= {reset_time})
@@ -88,7 +106,8 @@ class Queries():
             "spawns": spawnpoint_select,
             "mons": mon_select,
             "nest_delete": nest_delete,
-            "nest_insert": nest_insert
+            "nest_insert": nest_insert,
+            "most_mon": most_mon
         }
 
     def stops(self, area):
@@ -107,6 +126,10 @@ class Queries():
             query = query.format(pokestops=pokestops)
 
         self.cursor.execute(query)
+        return self.cursor.fetchone()
+
+    def most_mon(self, mons, time):
+        self.cursor.execute(self.queries["most_mons"].format(nest_mons=mons, reset_time=time))
         return self.cursor.fetchone()
 
     def nest_delete(self):
