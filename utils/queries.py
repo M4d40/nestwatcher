@@ -129,7 +129,7 @@ class Queries():
         return self.cursor.fetchone()
 
     def most_mon(self, mons, time):
-        self.cursor.execute(self.queries["most_mons"].format(nest_mons=mons, reset_time=time))
+        self.cursor.execute(self.queries["most_mon"].format(nest_mons=mons, reset_time=time))
         return self.cursor.fetchone()
 
     def nest_delete(self):
