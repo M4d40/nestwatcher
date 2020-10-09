@@ -208,6 +208,16 @@ def analyze_nests(config, area, nest_mons, queries):
                 "center_lat": nest.lat,
                 "center_lon": nest.lon,
             })
+        all_ids = [n.id for n in nests]:
+        for oid, data in area_file_data.items():
+            if oid not in all_ids:
+                dict_writer.writerow({
+                    "osm_id": oid,
+                    "name": data["name"],
+                    "center_lat": data["center_lat"],
+                    "center_lon": data["center_lon"],
+                })
+
         log.info("Saved area data")
     log.success(f"All done with {area.name}\n")
 
