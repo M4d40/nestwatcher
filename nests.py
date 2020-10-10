@@ -17,6 +17,7 @@ from utils.discord import get_emotes
 parser = argparse.ArgumentParser()
 parser.add_argument("-c", "--config", default="config/config.ini", help="Config file to use")
 parser.add_argument("-t", "--hours", default=None, help="Hours since last migration")
+parser.add_argument("-a", "--area", default=None, help="A specific area to analyze")
 args = parser.parse_args()
 config_path = args.config
 config = Config(config_path)
@@ -27,6 +28,12 @@ with open("config/areas.json", "r") as f:
     areas = json.load(f)
 with open("config/settings.json", "r") as f:
     settings = json.load(f)
+
+if args.area is not None:
+    areas = [a for a in areas if a["name"] == args.area]
+    if len(areas) == 0:
+        log.error("Couldn't find that area. Maybe check capitalization")
+        sys.exit()
 
 reset_time = int(time.time()) - (config.hours_since_change*3600)
 
