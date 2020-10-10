@@ -46,6 +46,7 @@ defaults = {
     "min_spawnpoints": 2,
     "min_average": 0.5,
     "scan_hours_per_day": 24,
+    "max_markers": 30,
     "discord": ""
 }
 settings_defaults = [s for s in settings if s.get("area") == "DEFAULT"]

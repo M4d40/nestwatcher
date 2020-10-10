@@ -143,11 +143,11 @@ class Area():
                 return points
             for nest in self.nests:
                 points = []
-                if config.max_markers == 1:
+                if self.settings["max_markers"] == 1:
                     points = add_to_points(points, nest.mon_id, nest.lat, nest.lon)
                 else:
-                    if nest.mon_avg > config.max_markers:
-                        avg = config.max_markers
+                    if nest.mon_avg > self.settings["max_markers"]:
+                        avg = self.settings["max_markers"]
                     else:
                         avg = round(nest.mon_avg)
                     while len(points) <= avg - 1:
