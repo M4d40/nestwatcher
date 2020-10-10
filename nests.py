@@ -3,6 +3,7 @@ import argparse
 import requests
 import discord
 import time
+import sys
 
 from datetime import datetime
 from geojson import FeatureCollection, dumps
