@@ -246,7 +246,7 @@ class Park():
                 (amount / float(self._config.hours_since_change)) * (
                     24.00 / float(hours)), 2)
 
-    def generate_details(self, area_file):
+    def generate_details(self, area_file, nr):
         if self.id in area_file.keys():
             entry = area_file[self.id]
             self.name = entry["name"]
@@ -254,7 +254,7 @@ class Park():
             self.lon = round(float(entry["center_lon"]), 6)
         else:
             tags = self._element.get("tags", {})
-            self.name = tags.get("name", tags.get("official_name", self._default_name))
+            self.name = tags.get("name", tags.get("official_name", self._default_name.format(nr=nr)))
             # get name. if not there, get official name. if not there, use default name
 
             if isinstance(self.polygon, geometry.MultiPolygon):

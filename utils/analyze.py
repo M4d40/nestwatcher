@@ -162,7 +162,7 @@ def analyze_nests(config, area, nest_mons, queries, reset_time):
                 failed_nests["Avoiding double nests"] += 1
                 continue
 
-            park.generate_details(area_file_data)
+            park.generate_details(area_file_data, failed_nests["Total Nests found"])
 
             # Insert Nest data to db
             insert_args = {
