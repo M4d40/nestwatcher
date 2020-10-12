@@ -19,7 +19,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-c", "--config", default="config/config.ini", help="Config file to use")
 parser.add_argument("-t", "--hours", default=None, help="Hours since last migration")
 parser.add_argument("-a", "--area", default=None, help="A specific area to analyze")
-parser.add_argument("-ie", "--noevents", action='store_true', help="Ignore event data")
+parser.add_argument("-ne", "--noevents", action='store_true', help="Ignore event data")
 args = parser.parse_args()
 config_path = args.config
 config = Config(config_path)
