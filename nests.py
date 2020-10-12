@@ -19,11 +19,14 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-c", "--config", default="config/config.ini", help="Config file to use")
 parser.add_argument("-t", "--hours", default=None, help="Hours since last migration")
 parser.add_argument("-a", "--area", default=None, help="A specific area to analyze")
+parser.add_argument("-ie", "--ignore-events", default=None, help="Ignore event data")
 args = parser.parse_args()
 config_path = args.config
 config = Config(config_path)
-if not args.hours is None:
+if args.hours is not None:
     config.hours_since_change = int(args.hours)
+if args.ignore-events is not None:
+    config.use_events = False
 
 with open("config/areas.json", "r") as f:
     areas = json.load(f)
