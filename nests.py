@@ -19,13 +19,13 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-c", "--config", default="config/config.ini", help="Config file to use")
 parser.add_argument("-t", "--hours", default=None, help="Hours since last migration")
 parser.add_argument("-a", "--area", default=None, help="A specific area to analyze")
-parser.add_argument("-ie", "--ignore-events", default=None, help="Ignore event data")
+parser.add_argument("-ie", "--noevents", action='store_true', help="Ignore event data")
 args = parser.parse_args()
 config_path = args.config
 config = Config(config_path)
 if args.hours is not None:
     config.hours_since_change = int(args.hours)
-if args.ignore-events is not None:
+if args.noevents:
     config.use_events = False
 
 with open("config/areas.json", "r") as f:
@@ -78,8 +78,8 @@ for setting in area_settings.values():
 
 # Event Data
 
+event_mons = []
 if config.use_events:
-    event_mons = []
     event = requests.get("https://raw.githubusercontent.com/ccev/pogoinfo/info/events/active.json").json()
     if datetime.strptime(event["end"], "%Y-%m-%d %H:%M") > datetime.now():
         log.success(f"Found ongoing event: {event['name']}")
