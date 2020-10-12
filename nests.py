@@ -75,19 +75,20 @@ for setting in area_settings.values():
 
 # Event Data
 
-event_mons = []
-event = requests.get("https://raw.githubusercontent.com/ccev/pogoinfo/info/events/active.json").json()
-if datetime.strptime(event["end"], "%Y-%m-%d %H:%M") > datetime.now():
-    log.success(f"Found ongoing event: {event['name']}")
-    log.debug(event)
-    for mon in event["details"]["spawns"]:
-        try:
-            event_mons.append(mon.split("_")[0])
-        except:
-            pass
-    log.debug(f"event mons: {event_mons}")
-else:
-    log.info("No ongoing event found")
+if config.use_events:
+    event_mons = []
+    event = requests.get("https://raw.githubusercontent.com/ccev/pogoinfo/info/events/active.json").json()
+    if datetime.strptime(event["end"], "%Y-%m-%d %H:%M") > datetime.now():
+        log.success(f"Found ongoing event: {event['name']}")
+        log.debug(event)
+        for mon in event["details"]["spawns"]:
+            try:
+                event_mons.append(mon.split("_")[0])
+            except:
+                pass
+        log.debug(f"event mons: {event_mons}")
+    else:
+        log.info("No ongoing event found")
 
 # Getting nesting species
 
