@@ -4,7 +4,7 @@ import random
 import math
 
 from shapely import geometry
-from shapely.ops import polylabel
+from shapely.ops import polylabel, linemerge, unary_union, polygonize
 from geojson import Feature
 from urllib.parse import quote_plus
 
@@ -226,7 +226,7 @@ class Park():
         self.polygon = None
         self.min_lon, self.min_lat, self.max_lon, self.max_lat = (0, 0, 0, 0)
         self.sql_fence = ""
-        self.Feature = None
+        self.feature = None
 
         self.id = element["id"]
         self.name = ""
@@ -320,7 +320,6 @@ class RelPark(Park):
             
             way = [w for w in ways if w.id == member["ref"]]
             if way == []:
-                self.is_valid = False
                 continue
             else:
                 way = way[0]
@@ -330,16 +329,22 @@ class RelPark(Park):
             for point in way._element["nodes"]:
                 point_coords = nodes[point]
                 area_points.append([point_coords['lon'], point_coords['lat']])
-            if len(area_points) < 3:
-                continue
-            way_poly = geometry.Polygon(area_points)
+
+            way_poly = geometry.LineString(area_points)
 
             if member["role"] == "inner":
                 inner_members.append(way_poly)
             else:
                 outer_members.append(way_poly)
-        outer_polygon = geometry.MultiPolygon(outer_members).buffer(0)
-        inner_polygon = geometry.MultiPolygon(inner_members).buffer(0)
+
+        def get_polys(lss):
+            merged = linemerge([*lss])
+            borders = unary_union(merged)
+            polygons = list(polygonize(borders))
+            return polygons
+
+        outer_polygon = geometry.MultiPolygon(get_polys(outer_members))
+        inner_polygon = geometry.MultiPolygon(get_polys(inner_members))
         final_polygon = None
         if outer_polygon and inner_polygon:
             final_polygon = outer_polygon.symmetric_difference(
