@@ -8,6 +8,6 @@
 {
     "nest_entry": "{mon_emoji} {mon_name} (~{mon_avg}/hr): **{park_name}**\n",
     "sort_by": "mon_avg",
-    "min_avg": 3,
+    "min_avg": 1,
     "ignore_unnamed": false
 }]
