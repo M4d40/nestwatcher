@@ -5,7 +5,7 @@ import timeit
 
 from rich.progress import Progress
 from shapely import geometry
-from shapely.ops import polylabel
+from shapely.ops import polylabel, cascaded_union
 from geojson import Feature
 from collections import defaultdict
 
@@ -50,10 +50,13 @@ def analyze_nests(config, area, nest_mons, queries, reset_time):
                 quoting=csv.QUOTE_MINIMAL,
             )
             for line in dict_reader:
+                if line.get("connect") == "":
+                    line["connect"] = 0
                 area_file_data[int(line["osm_id"])] = {
                     "name": line["name"],
                     "center_lat": line["center_lat"],
                     "center_lon": line["center_lon"],
+                    "connect": int(line.get("connect", 0))
                 }
 
     except FileNotFoundError:
@@ -99,6 +102,20 @@ def analyze_nests(config, area, nest_mons, queries, reset_time):
         for park in ways:
             park.get_polygon(nodes)
             progress.update(check_rels_task, advance=1)
+
+        for osm_id, data in area_file_data.items():
+            if data["connect"] > 0:
+                for i, park in enumerate(parks):
+                    if park.id == osm_id:
+                        big_park = park
+                        big_park_i = i
+                    if park.id == data["connect"]:
+                        small_park = park
+                        small_park_i = i
+
+                parks[big_park_i].connect = data["connect"]
+                parks[big_park_i].polygon = cascaded_union([big_park.polygon, small_park.polygon])
+                parks.pop(small_park_i)
 
         # NOW CHECK ALL AREAS ONE AFTER ANOTHER
         check_nest_task = progress.add_task("Nests found: 0", total=len(parks))
@@ -190,7 +207,7 @@ def analyze_nests(config, area, nest_mons, queries, reset_time):
         return nest.mon_avg
 
     with open(area_file_name, mode="w+") as area_file:
-        fieldnames = [u"name", u"center_lat", u"center_lon", u"osm_id"]
+        fieldnames = [u"name", u"center_lat", u"center_lon", u"osm_id", u"connect"]
         dict_writer = csv.DictWriter(
             area_file,
             fieldnames=fieldnames,
@@ -205,6 +222,7 @@ def analyze_nests(config, area, nest_mons, queries, reset_time):
                 "name": nest.name,
                 "center_lat": nest.lat,
                 "center_lon": nest.lon,
+                "connect": nest.connect
             })
         all_ids = [n.id for n in nests]
         for oid, data in area_file_data.items():

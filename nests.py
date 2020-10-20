@@ -185,4 +185,8 @@ if discord_message:
         await bot.logout()
 
     bot.run(config.discord_token)
+
+if discord_message:
+    log.info("Sending webhooks")
+
 log.success("All done.")

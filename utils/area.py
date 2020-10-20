@@ -8,6 +8,8 @@ from shapely.ops import polylabel, linemerge, unary_union, polygonize
 from geojson import Feature
 from urllib.parse import quote_plus
 
+from utils.logging import log
+
 def get_zoom(ne, sw, width, height, tile_size):
     ne = [c * 1.06 for c in ne]
     sw = [c * 1.06 for c in sw]
@@ -159,8 +161,10 @@ class Area():
             center_lon = minlon + ((maxlon - minlon) / 2)
             def parse(var):
                 return quote_plus(json.dumps(var)).replace('+','')
-            static_map = config.static_url + "staticmap/nests?" + f"lat={center_lat}&lon={center_lon}&zoom={zoom}&nestjson={parse(markers)}&pregenerate=true&regeneratable=true"
-            result = requests.get(static_map)
+            static_map_raw = config.static_url + "staticmap/nests?" + f"lat={center_lat}&lon={center_lon}&zoom={zoom}&nestjson={parse(markers)}&pregenerate=true&regeneratable=true"
+            result = requests.get(static_map_raw)
+            if "error" in result.text:
+                log.error(f"Error while generating Static Map:\n\n{static_map_raw}\n")
             static_map = config.static_url + f"staticmap/pregenerated/{result.text}"
             requests.get(static_map)
 
@@ -232,6 +236,7 @@ class Park():
         self.name = ""
         self.lat = 0
         self.lon = 0
+        self.connect = 0
 
         self.mon_id = 0
         self.mon_count = 0
@@ -371,9 +376,6 @@ class RelPark(Park):
                 coords = polygon.exterior.coords
                 for lon, lat in coords:
                     sql_fence.append(f"{lat} {lon}")
-                first_point = f"{coords[0][1]} {coords[0][0]}"
-                if first_point != sql_fence[0]:
-                    sql_fence.append(first_point)
                 sql_fences.append("(" + ",".join(sql_fence) + ")")
         self.sql_fence = ",".join(sql_fences)
 
