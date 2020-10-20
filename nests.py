@@ -48,6 +48,7 @@ defaults = {
     "min_pokemon": 9,
     "min_spawnpoints": 2,
     "min_average": 0.5,
+    "min_ratio": 0,
     "scan_hours_per_day": 24,
     "max_markers": 30,
     "discord": ""

@@ -168,13 +168,16 @@ def analyze_nests(config, area, nest_mons, queries, reset_time):
             poke_data = queries.mons(spawnpoint_in, str(tuple(nest_mons)), str(reset_time), pokestop_in)
             if poke_data is None:
                 continue
-            park.mon_data(poke_data[0], poke_data[1], area.settings['scan_hours_per_day'])
+            park.mon_data(poke_data[0], poke_data[1], area.settings['scan_hours_per_day'], len(spawns))
 
             if park.mon_count < area.settings['min_pokemon']:
                 failed_nests["Not enough Pokemon"] += 1
                 continue
             if park.mon_avg < area.settings['min_average']:
                 failed_nests["Average spawnrate too low"] += 1
+                continue
+            if park.mon_ratio < area.settings['min_ratio']:
+                failed_nests["Average spawn ratio too low"] += 1
                 continue
             if park.id in double_ways:
                 failed_nests["Avoiding double nests"] += 1

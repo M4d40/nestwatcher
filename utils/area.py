@@ -106,6 +106,8 @@ class Area():
             return nest.mon_avg
         def sort_count(nest):
             return nest.mon_count
+        def sort_ratio(nest):
+            return nest.mon_ratio
         def sort_mid(nest):
             return nest.mon_id
         def sort_name(nest):
@@ -115,6 +117,7 @@ class Area():
             "mon_avg": [sort_avg, True],
             "mon_count": [sort_count, True],
             "mon_id": [sort_mid, False],
+            "mon_ratio": [sort_ratio, True],
             "park_name": [sort_name, False]
         }
         sort_ = sorts[filters["sort_by"]]
@@ -212,6 +215,7 @@ class Area():
                 mon_id=nest.mon_id,
                 mon_avg=nest.mon_avg,
                 mon_count=nest.mon_count,
+                mon_ratio=nest.mon_ratio*100,
                 mon_name=mon_names.get(str(nest.mon_id), ""),
                 mon_emoji=mon_emote,
                 type_emoji=type_emote,
@@ -241,15 +245,17 @@ class Park():
         self.mon_id = 0
         self.mon_count = 0
         self.mon_avg = 0
+        self.mon_ratio = 0
 
         self.is_valid = True
 
-    def mon_data(self, mid, amount, hours):
+    def mon_data(self, mid, amount, hours, spawns):
         self.mon_id = mid
         self.mon_count = amount
         self.mon_avg = round(
                 (amount / float(self._config.hours_since_change)) * (
                     24.00 / float(hours)), 2)
+        self.mon_ratio = self.mon_avg / spawns
 
     def generate_details(self, area_file, nr):
         if self.id in area_file.keys():
