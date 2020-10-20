@@ -51,12 +51,12 @@ def analyze_nests(config, area, nest_mons, queries, reset_time):
             )
             for line in dict_reader:
                 if line.get("connect") == "":
-                    line["connect"] = 0
+                    line["connect"] = "0" 
                 area_file_data[int(line["osm_id"])] = {
                     "name": line["name"],
                     "center_lat": line["center_lat"],
                     "center_lon": line["center_lon"],
-                    "connect": int(line.get("connect", 0))
+                    "connect": list(map(int, str(line["connect"]).split(";")))
                 }
 
     except FileNotFoundError:
@@ -104,18 +104,19 @@ def analyze_nests(config, area, nest_mons, queries, reset_time):
             progress.update(check_rels_task, advance=1)
 
         for osm_id, data in area_file_data.items():
-            if data["connect"] > 0:
-                for i, park in enumerate(parks):
-                    if park.id == osm_id:
-                        big_park = park
-                        big_park_i = i
-                    if park.id == data["connect"]:
-                        small_park = park
-                        small_park_i = i
+            if data["connect"][0] > 0:
+                for connect_id in data["connect"]:
+                    for i, park in enumerate(parks):
+                        if park.id == osm_id:
+                            big_park = park
+                            big_park_i = i
+                        if park.id == connect_id:
+                            small_park = park
+                            small_park_i = i
 
-                parks[big_park_i].connect = data["connect"]
-                parks[big_park_i].polygon = cascaded_union([big_park.polygon, small_park.polygon])
-                parks.pop(small_park_i)
+                    parks[big_park_i].connect = connect_id
+                    parks[big_park_i].polygon = cascaded_union([big_park.polygon, small_park.polygon])
+                    parks.pop(small_park_i)
 
         # NOW CHECK ALL AREAS ONE AFTER ANOTHER
         check_nest_task = progress.add_task("Nests found: 0", total=len(parks))
