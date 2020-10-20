@@ -56,7 +56,7 @@ def analyze_nests(config, area, nest_mons, queries, reset_time):
                     "name": line["name"],
                     "center_lat": line["center_lat"],
                     "center_lon": line["center_lon"],
-                    "connect": list(map(int, str(line["connect"]).split(";")))
+                    "connect": list(map(int, str(line.get("connect", "0")).split(";")))
                 }
 
     except FileNotFoundError:
