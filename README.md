@@ -8,7 +8,7 @@ A Program to analyze nests in your area, save it to a database and send Discord 
 - `pip3 install -r requirements.txt --upgrade`
 
 ### Database
-The Program requires PMSF's table structure to rn. If you already have PMSF running, you can use its manualdb. If not, `mysql your_db_name < nests.sql`.
+The Program requires PMSF's table structure to run. If you already have PMSF running, you can use its manualdb. If not; `mysql your_db_name < nests.sql`.
 
 ### Config files
 #### config.ini
@@ -16,11 +16,12 @@ Most values are self-explanatory. Just note that:
 - pokestop_pokemon only works for RDM. Ignore this if you're using MAD.
 - The Geojson path should be the full path to PMSF's nest file. If you don't run PMSF, just put `geojson.json` to have it saved in the nest script directory
 - Discord token: Leave blank if you don't want Discord notifications
-- tileserver_url: Leave blank if you don't have a tileserver
+- tileserver_url: Leave blank if you don't have a tileserver (only support [flo's tileserver](https://github.com/123FLO321/SwiftTileserverCache/)
 - max_markers_per_nest: If you scan a big area and static maps look like a mess, you can put 1
+- i_scan_berlin: Set to true if you live in a meganest
 
 #### areas.json
-Every area configured here will be scanned for nests. It's the same format e.g. Poracle/Discordopole/stopwatcher use. You can copy from there, if you have those scripts set up.
+Every area configured here will be scanned for nests. It's the same format e.g. Poracle/Discordopole/stopwatcher use. You can copy from there, if you have those scripts set up. If not, Try creating your fences on [geojson.io](http://geojson.io/) and copy it to the right format.
 
 #### settings.json
 Settings can be used to fine-tune each area. Everything here is optional. Values configured in the default setting will be used for all areas. Possible keys:
@@ -56,6 +57,8 @@ There's two things in here. The first part is the embed template of the nest mes
     - `mon_name`
 - **min_avg**: The minimum hourly average a nest needs to be posted
 - **ignore_unnamed**: Whether or not to ignore parks with unknown names
+
+TIP: If you want a Map link in your message, you can use markdown yourself, e.g. `[{park_name}](www.map.com?lat={lat}&lon={lon})`
 
 ### Data files
 #### area_data
