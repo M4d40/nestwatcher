@@ -16,9 +16,14 @@ Most values are self-explanatory. Just note that:
 - pokestop_pokemon only works for RDM. Ignore this if you're using MAD.
 - The Geojson path should be the full path to PMSF's nest file. If you don't run PMSF, just put `geojson.json` to have it saved in the nest script directory
 - Discord token: Leave blank if you don't want Discord notifications
-- tileserver_url: Leave blank if you don't have a tileserver (only support [flo's tileserver](https://github.com/123FLO321/SwiftTileserverCache/)
+- tileserver_url: Leave blank if you don't have a tileserver 
 - max_markers_per_nest: If you scan a big area and static maps look like a mess, you can put 1
 - i_scan_berlin: Set to true if you live in a meganest
+
+#### Tileserver
+This script is capable of generating static maps for a nice nest overview. To get them working, you must have [flo's tileserver](https://github.com/123FLO321/SwiftTileserverCache/) installed and copy nests.json to its `Templates` folder.
+
+If you encounter errors, the URL length might exceed your server's limit. To fix that, you can try reducing the `max_markers` value in settings.json
 
 #### areas.json
 Every area configured here will be scanned for nests. It's the same format e.g. Poracle/Discordopole/stopwatcher use. You can copy from there, if you have those scripts set up. If not, Try creating your fences on [geojson.io](http://geojson.io/) and copy it to the right format.
@@ -30,6 +35,7 @@ Settings can be used to fine-tune each area. Everything here is optional. Values
 - **min_spawnpoints**: The minimum amount of spawnpoints that have to exist in a nest
 - **min_average**: Minimum hourly spawn average the Nest must have
 - **scan_hors_per_day**: How many hours you scan that area per day
+- **max_markers**: The maximum amount of markers to display on the area's static map.
 - **discord**: Either a Discord webhook url or a Discord Channel ID
 
 #### discord.json
