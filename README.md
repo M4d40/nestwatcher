@@ -30,7 +30,7 @@ Settings can be used to fine-tune each area. Everything here is optional. Values
 - **min_spawnpoints**: The minimum amount of spawnpoints that have to exist in a nest
 - **min_average**: Minimum hourly spawn average the Nest must have
 - **scan_hors_per_day**: How many hours you scan that area per day
-- **discord**: The Channel ID nest messages will be sent in
+- **discord**: Either a Discord webhook url or a Discord Channel ID
 
 #### discord.json
 There's two things in here. The first part is the embed template of the nest messages. You can use an embed generator like [this one](https://leovoel.github.io/embed-visualizer/) to generate it. The second part includes the template for a single nest and other settings to customize the message.
@@ -47,7 +47,7 @@ There's two things in here. The first part is the embed template of the nest mes
     - `{mon_avg}` - The nests's hourly average of nest spawns
     - `{mon_count}` - Total amount of nest spawns in the given timespan
     - `{mon_name}` - The nesting pokemon's name (in the language from your config)
-    - `{mon_emoji}` - The nesting pokemon's icon (as an emote)
+    - `{mon_emoji}` - The nesting pokemon's icon (as an emote) (not supported for webhooks)
     - `{type_emoji}` - The nesting pokemon's type as an emoji (or multiple emojis)
     - `{shiny}` - Whether or not the nesting pokemon can be shiny (shown as an emoji)
 - **sort_by**: The value nests are sorted by. Possible values:
