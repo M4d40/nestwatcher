@@ -50,9 +50,10 @@ class Area():
         for lat, lon in fence:
             polygon_.append((lon, lat))
             sql_fence.append(f"{lat} {lon}")
+        sql_fence.append(f"{fence[0][0]} {fence[0][1]}")
         
         self.polygon = geometry.Polygon(polygon_)
-        self.sql_fence = ",".join(sql_fence)
+        self.sql_fence = "(" + ",".join(sql_fence) + ")"
 
         bounds = self.polygon.bounds
         self.bbox = f"{bounds[1]},{bounds[0]},{bounds[3]},{bounds[2]}"
