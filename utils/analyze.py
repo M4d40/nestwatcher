@@ -168,7 +168,7 @@ def analyze_nests(config, area, nest_mons, queries, reset_time):
             poke_data = queries.mons(spawnpoint_in, str(tuple(nest_mons)), str(reset_time), pokestop_in)
             if poke_data is None:
                 continue
-            park.mon_data(poke_data[0], poke_data[1], area.settings['scan_hours_per_day'], len(spawns))
+            park.mon_data(poke_data[0], poke_data[1], area.settings['scan_hours_per_day'], len(spawns) + len(stops))
 
             if park.mon_count < area.settings['min_pokemon']:
                 failed_nests["Not enough Pokemon"] += 1
