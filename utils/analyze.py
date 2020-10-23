@@ -225,7 +225,7 @@ def analyze_nests(config, area, nest_mons, queries, reset_time):
                 "name": nest.name,
                 "center_lat": nest.lat,
                 "center_lon": nest.lon,
-                "connect": ";".join(nest.connect)
+                "connect": 0 if len(nest.connect) == 0 else ";".join(nest.connect)
             })
         all_ids = [n.id for n in nests]
         for oid, data in area_file_data.items():
