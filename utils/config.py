@@ -9,6 +9,7 @@ class Config:
         self.use_events = config_file.getboolean("Config", "events", fallback=True)
         self.pokestop_pokemon = config_file.getboolean("Config", "pokestop_pokemon")
         self.in_meganest = config_file.getboolean("Config", "i_scan_berlin", fallback=False)
+        self.workers = 5
 
         self.scanner = config_file.get("Scanner DB", "scanner")
         self.db_name = config_file.get("Scanner DB", "name")

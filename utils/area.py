@@ -241,7 +241,7 @@ class Park():
         self.name = ""
         self.lat = 0
         self.lon = 0
-        self.connect = 0
+        self.connect = []
 
         self.mon_id = 0
         self.mon_count = 0

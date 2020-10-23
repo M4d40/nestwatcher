@@ -114,7 +114,7 @@ def analyze_nests(config, area, nest_mons, queries, reset_time):
                             small_park = park
                             small_park_i = i
 
-                    parks[big_park_i].connect = connect_id
+                    parks[big_park_i].connect.append(str(connect_id))
                     parks[big_park_i].polygon = cascaded_union([big_park.polygon, small_park.polygon])
                     parks.pop(small_park_i)
 
@@ -225,7 +225,7 @@ def analyze_nests(config, area, nest_mons, queries, reset_time):
                 "name": nest.name,
                 "center_lat": nest.lat,
                 "center_lon": nest.lon,
-                "connect": nest.connect
+                "connect": ";".join(nest.connect)
             })
         all_ids = [n.id for n in nests]
         for oid, data in area_file_data.items():
