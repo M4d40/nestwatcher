@@ -4,6 +4,7 @@ import requests
 import discord
 import time
 import sys
+import math
 
 from datetime import datetime
 from geojson import FeatureCollection, dumps
@@ -23,8 +24,20 @@ parser.add_argument("-ne", "--noevents", action='store_true', help="Ignore event
 args = parser.parse_args()
 config_path = args.config
 config = Config(config_path)
+
+# Auto migration time
+if config.auto_time:
+    last_migration_timestamp = requests.get("https://raw.githubusercontent.com/ccev/pogoinfo/info/last-nest-migration").text
+    last_migration = datetime.fromtimestamp(int(last_migration_timestamp))
+    current_time = datetime.utcnow()
+    td = current_time - last_migration
+    days, seconds = td.days, td.seconds
+    config.hours_since_change = math.floor(days * 24 + seconds / 3600)
+    log.success(f"Hours since last migration: {config.hours_since_change}")
+
 if args.hours is not None:
     config.hours_since_change = int(args.hours)
+    log.info(f"Overwriting hours since change with {config.hours_since_change}")
 if args.noevents:
     config.use_events = False
 

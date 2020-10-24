@@ -60,7 +60,8 @@ There's two things in here. The first part is the embed template of the nest mes
     - `sort_vg`
     - `mon_count`
     - `mon_id`
-    - `mon_name`
+    - `park_name`
+    - `mon_ratio`
 - **min_avg**: The minimum hourly average a nest needs to be posted
 - **ignore_unnamed**: Whether or not to ignore parks with unknown names
 
