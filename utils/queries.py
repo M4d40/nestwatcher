@@ -86,19 +86,25 @@ class Queries():
 
         nest_delete = "DELETE FROM nests"
         nest_insert = """INSERT INTO nests (
-            nest_id, name, lat, lon, pokemon_id, type, pokemon_count, pokemon_avg, updated)
+            nest_id, name, lat, lon, pokemon_id, pokemon_form, type, pokemon_count, pokemon_avg, updated,
+            pokemon_ratio, polygon_type, polygon_path)
         VALUES(
             %(nest_id)s, %(name)s, %(lat)s, %(lon)s,
-            %(pokemon_id)s, %(type)s, %(pokemon_count)s, %(pokemon_avg)s, %(current_time)s)
+            %(pokemon_id)s, %(form)s, %(type)s, %(pokemon_count)s, %(pokemon_avg)s, %(current_time)s,
+            %(pokemon_ratio)s, %(poly_type)s, %(poly_path)s)
         ON DUPLICATE KEY UPDATE
             pokemon_id = %(pokemon_id)s,
+            pokemon_form = %(form)s,
             name = %(name)s,
             lat = %(lat)s,
             lon = %(lon)s,
             type = %(type)s,
             pokemon_count = %(pokemon_count)s,
             pokemon_avg = %(pokemon_avg)s,
-            updated = %(current_time)s
+            updated = %(current_time)s,
+            pokemon_ratio = %(pokemon_ratio)s,
+            polygon_type = %(poly_type)s,
+            polygon_path = %(poly_path)s
         """
 
         self.queries = {
@@ -136,6 +142,7 @@ class Queries():
         self.nest_cursor.execute(self.queries["nest_delete"])
 
     def nest_insert(self, args):
+        print(args)
         self.nest_cursor.execute(self.queries["nest_insert"], args)
 
     def close(self):

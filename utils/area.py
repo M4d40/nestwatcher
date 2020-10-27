@@ -236,6 +236,7 @@ class Park():
         self.min_lon, self.min_lat, self.max_lon, self.max_lat = (0, 0, 0, 0)
         self.sql_fence = ""
         self.feature = None
+        self.path = []
 
         self.id = element["id"]
         self.name = ""
@@ -244,6 +245,7 @@ class Park():
         self.connect = []
 
         self.mon_id = 0
+        self.mon_form = 0
         self.mon_count = 0
         self.mon_avg = 0
         self.mon_ratio = 0
@@ -317,6 +319,7 @@ class WayPark(Park):
         sql_fence = []
         for lon, lat in self.polygon.exterior.coords:
             sql_fence.append(f"{lat} {lon}")
+            self.path.append([lat, lon])
         self.sql_fence = "(" + ",".join(sql_fence) + ")"
 
 class RelPark(Park):
@@ -379,10 +382,13 @@ class RelPark(Park):
         sql_fences = []
         for polygon in polygons:
             sql_fence = []
+            path = []
             if polygon.is_valid:
                 coords = polygon.exterior.coords
                 for lon, lat in coords:
                     sql_fence.append(f"{lat} {lon}")
+                    path.append([lat, lon])
+                self.path.append(path)
                 sql_fences.append("(" + ",".join(sql_fence) + ")")
         self.sql_fence = ",".join(sql_fences)
 
