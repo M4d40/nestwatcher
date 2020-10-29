@@ -70,7 +70,7 @@ class Queries():
                 AND
                 pokemon_id IN {nest_mons}
                 AND
-                UNIX_TIMESTAMP(disappear_time) >= {reset_time})
+                UNIX_TIMESTAMP(last_modified) >= {reset_time})
             GROUP BY pokemon_id
             ORDER BY count desc
             LIMIT 1"""
@@ -79,7 +79,7 @@ class Queries():
             WHERE (
                 pokemon_id IN {nest_mons}
                 AND
-                UNIX_TIMESTAMP(disappear_time) >= {reset_time})
+                UNIX_TIMESTAMP(last_modified) >= {reset_time})
             GROUP BY pokemon_id
             ORDER BY count desc
             LIMIT 1"""
