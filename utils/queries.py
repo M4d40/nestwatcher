@@ -142,7 +142,6 @@ class Queries():
         self.nest_cursor.execute(self.queries["nest_delete"])
 
     def nest_insert(self, args):
-        print(args)
         self.nest_cursor.execute(self.queries["nest_insert"], args)
 
     def close(self):
