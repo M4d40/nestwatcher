@@ -1,5 +1,4 @@
 import json
-import csv
 import time
 import timeit
 
@@ -39,25 +38,12 @@ def analyze_nests(config, area, nest_mons, queries, reset_time):
 
     # Getting area data
 
-    area_file_name = f"data/area_data/{area.name}.csv"
+    area_file_name = f"data/area_data/{area.name}.json"
     area_file_data = {}
     try:
         with open(area_file_name, mode="r", encoding="utf-8") as area_file:
             log.info("Found area data file. Reading and using data from it now")
-            dict_reader = csv.DictReader(
-                area_file,
-                quotechar='"',
-                quoting=csv.QUOTE_MINIMAL,
-            )
-            for line in dict_reader:
-                if line.get("connect") == "":
-                    line["connect"] = "0" 
-                area_file_data[int(line["osm_id"])] = {
-                    "name": line["name"],
-                    "center_lat": line["center_lat"],
-                    "center_lon": line["center_lon"],
-                    "connect": list(map(int, str(line.get("connect", "0")).split(";")))
-                }
+            area_file_data = json.load(area_file)
 
     except FileNotFoundError:
         pass
@@ -104,19 +90,18 @@ def analyze_nests(config, area, nest_mons, queries, reset_time):
             progress.update(check_rels_task, advance=1)
 
         for osm_id, data in area_file_data.items():
-            if data["connect"][0] > 0:
-                for connect_id in data["connect"]:
-                    for i, park in enumerate(parks):
-                        if park.id == osm_id:
-                            big_park = park
-                            big_park_i = i
-                        if park.id == connect_id:
-                            small_park = park
-                            small_park_i = i
+            for connect_id in data["connect"]:
+                for i, park in enumerate(parks):
+                    if park.id == int(osm_id):
+                        big_park = park
+                        big_park_i = i
+                    if park.id == connect_id:
+                        small_park = park
+                        small_park_i = i
 
-                    parks[big_park_i].connect.append(str(connect_id))
-                    parks[big_park_i].polygon = cascaded_union([big_park.polygon, small_park.polygon])
-                    parks.pop(small_park_i)
+                parks[big_park_i].connect.append(connect_id)
+                parks[big_park_i].polygon = cascaded_union([big_park.polygon, small_park.polygon])
+                parks.pop(small_park_i)
 
         # NOW CHECK ALL AREAS ONE AFTER ANOTHER
         check_nest_task = progress.add_task("Nests found: 0", total=len(parks))
@@ -213,33 +198,22 @@ def analyze_nests(config, area, nest_mons, queries, reset_time):
     def sort_avg(nest):
         return nest.mon_avg
 
+    new_area_data = {}
+    for nest in sorted(nests, key=sort_avg, reverse=True):
+        new_area_data[nest.id] = {
+            "name": nest.name,
+            "center": [nest.lat, nest.lon],
+            "connect": nest.connect
+        }
+    for oid, data in area_file_data.items():
+        if oid not in [n.id for n in nests]:
+            new_area_data[oid] = {
+                "name": data["name"],
+                "center": [data["center_lat"], data["center_lon"]],
+                "connect": data["connect"]
+            }
     with open(area_file_name, mode="w+") as area_file:
-        fieldnames = [u"name", u"center_lat", u"center_lon", u"osm_id", u"connect"]
-        dict_writer = csv.DictWriter(
-            area_file,
-            fieldnames=fieldnames,
-            quotechar='"',
-            quoting=csv.QUOTE_MINIMAL,
-        )
-        dict_writer.writeheader()
-
-        for nest in sorted(nests, key=sort_avg, reverse=True):
-            dict_writer.writerow({
-                "osm_id": nest.id,
-                "name": nest.name,
-                "center_lat": nest.lat,
-                "center_lon": nest.lon,
-                "connect": 0 if len(nest.connect) == 0 else ";".join(nest.connect)
-            })
-        all_ids = [n.id for n in nests]
-        for oid, data in area_file_data.items():
-            if oid not in all_ids:
-                dict_writer.writerow({
-                    "osm_id": oid,
-                    "name": data["name"],
-                    "center_lat": data["center_lat"],
-                    "center_lon": data["center_lon"],
-                })
+        area_file.write(json.dumps(new_area_data, indent=4))
 
         log.info("Saved area data")
     log.success(f"All done with {area.name}\n")

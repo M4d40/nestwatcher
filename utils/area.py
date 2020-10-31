@@ -276,8 +276,8 @@ class Park():
         if self.id in area_file.keys():
             entry = area_file[self.id]
             self.name = entry["name"]
-            self.lat = round(float(entry["center_lat"]), 6)
-            self.lon = round(float(entry["center_lon"]), 6)
+            self.lat = round(float(entry["center"][0]), 6)
+            self.lon = round(float(entry["center"][1]), 6)
         else:
             tags = self._element.get("tags", {})
             self.name = tags.get("name", tags.get("official_name", self._default_name.format(nr=nr)))
