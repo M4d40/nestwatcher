@@ -43,7 +43,9 @@ def analyze_nests(config, area, nest_mons, queries, reset_time):
     try:
         with open(area_file_name, mode="r", encoding="utf-8") as area_file:
             log.info("Found area data file. Reading and using data from it now")
-            area_file_data = json.load(area_file)
+            area_file_data_raw = json.load(area_file)
+        for k, v in area_file_data_raw.items():
+            area_file_data[int(k)] = v
 
     except FileNotFoundError:
         pass
@@ -92,7 +94,7 @@ def analyze_nests(config, area, nest_mons, queries, reset_time):
         for osm_id, data in area_file_data.items():
             for connect_id in data["connect"]:
                 for i, park in enumerate(parks):
-                    if park.id == int(osm_id):
+                    if park.id == osm_id:
                         big_park = park
                         big_park_i = i
                     if park.id == connect_id:
