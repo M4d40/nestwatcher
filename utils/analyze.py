@@ -209,7 +209,7 @@ def analyze_nests(config, area, nest_mons, queries, reset_time):
         if oid not in [n.id for n in nests]:
             new_area_data[oid] = {
                 "name": data["name"],
-                "center": [data["center_lat"], data["center_lon"]],
+                "center": data["center"],
                 "connect": data["connect"]
             }
     with open(area_file_name, mode="w+") as area_file:
