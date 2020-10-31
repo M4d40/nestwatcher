@@ -5,6 +5,7 @@ import math
 
 from shapely import geometry
 from shapely.ops import polylabel, linemerge, unary_union, polygonize
+from datetime import datetime
 from geojson import Feature
 from urllib.parse import quote_plus
 
@@ -58,7 +59,7 @@ class Area():
         bounds = self.polygon.bounds
         self.bbox = f"{bounds[1]},{bounds[0]},{bounds[3]},{bounds[2]}"
     
-    def get_nest_text(self, config, emote_refs):
+    def get_nest_text(self, config, emote_refs=None):
         with open(f"data/mon_names/{config.language}.json", "r") as f:
             mon_names = json.load(f)
         with open("config/discord.json", "r") as f:
@@ -100,6 +101,7 @@ class Area():
 
         filters = template[1]
         entries = ""
+        entry_list = []
 
         # Sorting
 
@@ -165,10 +167,17 @@ class Area():
             center_lon = minlon + ((maxlon - minlon) / 2)
             def parse(var):
                 return quote_plus(json.dumps(var)).replace('+','')
-            static_map_raw = config.static_url + "staticmap/nests?" + f"lat={center_lat}&lon={center_lon}&zoom={zoom}&nestjson={parse(markers)}&pregenerate=true&regeneratable=true"
-            result = requests.get(static_map_raw)
+            
+            static_map_data = {
+                "lat": center_lat,
+                "lon": center_lon,
+                "zoom": zoom,
+                "nestjson": markers
+            }
+            static_map_raw = config.static_url + "staticmap/nests?pregenerate=true&regeneratable=true"
+            result = requests.post(static_map_raw, json=static_map_data)
             if "error" in result.text:
-                log.error(f"Error while generating Static Map:\n\n{static_map_raw}\n")
+                log.error(f"Error while generating Static Map:\n\n{static_map_raw}\n{result.text}\n")
             static_map = config.static_url + f"staticmap/pregenerated/{result.text}"
             requests.get(static_map)
 
@@ -181,7 +190,8 @@ class Area():
                     dic[k] = v.format(
                         nest_entry=entries,
                         areaname=self.name,
-                        staticmap=static_map
+                        staticmap=static_map,
+                        current_time=datetime.utcnow()
                     )
                 elif isinstance(v, dict):
                     dic[k] = replace(v)
@@ -204,9 +214,10 @@ class Area():
             type_emote = "/".join(type_emotes)
 
             mon_emote = ""
-            emote_id = emote_refs.get(nest.mon_id, "")
-            if not emote_id == "":
-                mon_emote = f"<:m{nest.mon_id}:{emote_id}>"
+            if emote_refs is not None:
+                emote_id = emote_refs.get(nest.mon_id, "")
+                if not emote_id == "":
+                    mon_emote = f"<:m{nest.mon_id}:{emote_id}>"
 
             entry = filters["nest_entry"].format(
                 park_name=nest.name,
@@ -224,7 +235,8 @@ class Area():
             )
             if len(entries) + len(entry) <= 2048:
                 entries += entry
-        return replace(template[0])
+            entry_list.append(entry)
+        return replace(template[0]), entry_list
 
 class Park():
     def __init__(self, element, config):

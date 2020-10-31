@@ -54,9 +54,6 @@ if args.area is not None:
 
 reset_time = int(time.time()) - (config.hours_since_change*3600)
 
-discord_webhook = False
-discord_message = False
-
 defaults = {
     "min_pokemon": 9,
     "min_spawnpoints": 2,
@@ -82,13 +79,6 @@ for setting in settings:
     area_settings[setting["area"]] = {}
     for k, v in defaults.items():
         area_settings[setting["area"]][k] = setting.get(k, v)
-
-for setting in area_settings.values():
-    if isinstance(setting["discord"], str):
-        if "webhooks" in setting["discord"]:
-            discord_webhook = True
-    elif isinstance(setting["discord"], int):
-        discord_message = True
 
 # Event Data
 
@@ -143,7 +133,24 @@ with open(config.json_path, "w+") as file_:
 queries.close()
 
 # Discord stuff
-if discord_message:
+
+discord_webhook_data = []
+discord_message_data = []     
+
+for area in full_areas:
+    if len(area.nests) == 0:
+        log.warning(f"Did not find any nests in {area.name} - Skipping notifications")
+        continue
+    d = area.settings["discord"]
+    if isinstance(d, str):
+        if "webhooks" in d:
+            embed_dict, entry_list = area.get_nest_text(config)
+            discord_webhook_data.append([embed_dict, entry_list])
+    elif isinstance(d, int):
+        discord_message_data.append([d, area])
+
+
+if len(discord_message_data) > 0:
     log.info("Logging into Discord")
     bot = discord.Client()
 
@@ -155,52 +162,47 @@ if discord_message:
         try:
             log.info("Connected to Discord. Generating Nest messages and sending them.")
             emote_refs = await get_emotes(bot, nesting_mons, config)
-            """if len(config.emote_server) > 0:
-                log.info("Createing emotes")
-                server = await bot.fetch_guild(config.emote_server)
-                for mon_id in [nest.mon_id for nest in [area.nests for area in full_areas][0]]:
-                    emote_name = f"m{mon_id}"
-                    image_url = config.icon_repo + f"pokemon_icon_{str(mon_id).zfill(3)}_00.png"
-                    image = requests.get(image_url).content
+            for d, area in discord_message_data:
+                """if len(config.emote_server) > 0:
+                    log.info("Createing emotes")
+                    server = await bot.fetch_guild(config.emote_server)
+                    for mon_id in [nest.mon_id for nest in [area.nests for area in full_areas][0]]:
+                        emote_name = f"m{mon_id}"
+                        image_url = config.icon_repo + f"pokemon_icon_{str(mon_id).zfill(3)}_00.png"
+                        image = requests.get(image_url).content
 
-                    emote = await server.create_custom_emoji(name=emote_name, image=image)
-                    emote_refs[mon_id] = emote.id"""
-            for area in full_areas:
-                if len(area.nests) == 0:
-                    log.warning(f"Did not find any nests in {area.name} - Skipping notifications")
-                    continue
-                d = area.settings["discord"]
-                if isinstance(d, int):
-                    channel = await bot.fetch_channel(d)
-                    found = False
-                    embed_dict = area.get_nest_text(config, emote_refs)
-                    embed = discord.Embed().from_dict(embed_dict)
-                    async for message in channel.history():
-                        if message.author == bot.user:
-                            embeds = message.embeds
-                            if len(embeds) > 0:
-                                if embeds[0].title == embed.title:
-                                    found = True
-                                    break
-                    if found:
-                        await message.edit(embed=embed)
-                        log.success(f"Found existing Nest message for {area.name} and edited it")
-                    else:
-                        await channel.send(embed=embed)
-                        log.success(f"Sent a new Nest message for {area.name}")
-            
-            """if len(emote_refs) > 0:
-                log.info("Deleting emotes again")
-                for emote_id in emote_refs.values():
-                    emote = await server.fetch_emoji(emote_id)
-                    await emote.delete()"""
+                        emote = await server.create_custom_emoji(name=emote_name, image=image)
+                        emote_refs[mon_id] = emote.id"""
+                channel = await bot.fetch_channel(d)
+                found = False
+                embed_dict, _ = area.get_nest_text(config, emote_refs)
+                embed = discord.Embed().from_dict(embed_dict)
+                async for message in channel.history():
+                    if message.author == bot.user:
+                        embeds = message.embeds
+                        if len(embeds) > 0:
+                            if embeds[0].title == embed.title:
+                                found = True
+                                break
+                if found:
+                    await message.edit(embed=embed)
+                    log.success(f"Found existing Nest message for {area.name} and edited it")
+                else:
+                    await channel.send(embed=embed)
+                    log.success(f"Sent a new Nest message for {area.name}")
+                
+                """if len(emote_refs) > 0:
+                    log.info("Deleting emotes again")
+                    for emote_id in emote_refs.values():
+                        emote = await server.fetch_emoji(emote_id)
+                        await emote.delete()"""
         except Exception as e:
             log.exception(e)
         await bot.logout()
 
     bot.run(config.discord_token)
 
-if discord_message:
+if len(discord_webhook_data) > 0:
     log.info("Sending webhooks")
 
 log.success("All done.")
