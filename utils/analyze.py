@@ -184,7 +184,7 @@ def analyze_nests(config, area, nest_mons, queries, reset_time):
                 "pokemon_avg": park.mon_avg,
                 "pokemon_ratio": park.mon_ratio,
                 "poly_path": json.dumps(park.path),
-                "poly_type": 1 if isinstance(park.polygon, geometry.MultiPolygon) else 0,
+                "poly_type": 1 if isinstance(park, RelPark) else 0,
                 "current_time": int(time.time())
             }
 

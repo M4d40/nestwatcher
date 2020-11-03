@@ -329,9 +329,11 @@ class WayPark(Park):
         self.polygon = geometry.Polygon(way_points)
 
         sql_fence = []
+        path = []
         for lon, lat in self.polygon.exterior.coords:
             sql_fence.append(f"{lat} {lon}")
-            self.path.append([lat, lon])
+            path.append([lat, lon])
+        self.path = [path]
         self.sql_fence = "(" + ",".join(sql_fence) + ")"
 
 class RelPark(Park):
