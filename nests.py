@@ -90,7 +90,7 @@ if config.use_events:
         log.debug(event)
         for mon in event["details"]["spawns"]:
             try:
-                event_mons.append(mon.split("_")[0])
+                event_mons.append(str(int(mon.split("_")[0])))
             except:
                 pass
         log.debug(f"event mons: {event_mons}")
@@ -145,7 +145,7 @@ for area in full_areas:
     if isinstance(d, str):
         if "webhooks" in d:
             embed_dict, entry_list = area.get_nest_text(config)
-            discord_webhook_data.append([embed_dict, entry_list])
+            discord_webhook_data.append([embed_dict, entry_list, d, area])
     elif isinstance(d, int):
         discord_message_data.append([d, area])
 
@@ -204,5 +204,45 @@ if len(discord_message_data) > 0:
 
 if len(discord_webhook_data) > 0:
     log.info("Sending webhooks")
+
+    for embed_dict, entry_list, webhook_link, area in discord_webhook_data:
+        entry_list_2 = []
+        entries = []
+
+        while len(entry_list) > 0:
+            text = ""
+            for entry in entry_list:
+                if len(entry+text) > 2048:
+                    entries.append(text)
+                    break
+                text += entry
+                entry_list_2.append(entry)
+            entry_list = [e for e in entry_list if e not in entry_list_2]
+        if text not in entries:
+            entries.append(text)
+
+        print(entry_list)
+        print("\n\n")
+
+        print(entries)
+
+        for i, entry in enumerate(entries):
+            embed = {
+                "description": entry
+            }
+            keys = ["color"]
+            if i == 0:
+                keys += ["title", "url", "thumbnail", "author"]
+            if i == len(entries) - 1:
+                keys += ["timestamp", "footer", "image"]
+            for key in keys:
+                if key in embed_dict.keys():
+                    embed[key] = embed_dict[key]
+        
+            print(embed)
+            r = requests.post(webhook_link, json={"embeds": [embed]})
+            log.success(f"Sent Webhook for {area.name} ({r.status_code})")
+            time.sleep(1)
+
 
 log.success("All done.")
