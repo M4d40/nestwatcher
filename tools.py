@@ -6,7 +6,7 @@ import sys
 import requests
 
 from utils.config import Config
-from utils.area import get_zoom
+from utils.area import get_zoom, Area
 from utils.queries import Queries
 
 tools = {
@@ -67,7 +67,11 @@ if wanted == "1":
             for emote in controls.keys():
                 await message.add_reaction(emote)
 
-            queries.nest_cursor.execute("select nest_id, name, lat, lon, polygon_path, polygon_type from nests order by pokemon_avg desc")
+            with open("config/areas.json", "r") as f:
+                areas = json.load(f)
+                area = Area([a for a in areas if a["name"] == areaname][0], None)
+
+            queries.nest_cursor.execute(f"select nest_id, name, lat, lon, polygon_path, polygon_type from nests WHERE ST_CONTAINS(ST_GEOMFROMTEXT('POLYGON({area.sql_fence})'), point(lat, lon)) order by pokemon_avg desc")
             nests = queries.nest_cursor.fetchall()
 
             file_name = f"data/area_data/{areaname}.json"
@@ -124,6 +128,8 @@ if wanted == "1":
                 result = requests.post(config.static_url + "staticmap?pregenerate=true", json=static_map_data)
                 if "error" in result.text:
                     print(f"Error while generating Static Map:\n\n{static_map_data}\n{result.text}\n")
+                    static_map_data["polygons"] = []
+                    result = requests.post(config.static_url + "staticmap?pregenerate=true", json=static_map_data)
                 static_map = config.static_url + f"staticmap/pregenerated/{result.text}"
                 requests.get(static_map)
                 
@@ -154,7 +160,18 @@ if wanted == "1":
                             with open(file_name, "w") as f:
                                 f.write(json.dumps(area_data, indent=4))
                         elif control == "point":
-                            print("")
+                            m = await bot.wait_for("message", check=m_check)
+                            point_str = m.content
+                            points = point_str.split(",")
+                            points = [float(p.strip()) for p in points]
+                            area_data[str(nest_id)]["center"] = points
+                            await m.delete()
+                            await message.remove_reaction(reaction, admin)
+                            embed.description = get_desc(name, points[0], points[1], osm_link, g_link)
+                            await message.edit(embed=embed)
+
+                            with open(file_name, "w") as f:
+                                f.write(json.dumps(area_data, indent=4))
                         elif control == "skip":
                             await message.remove_reaction(reaction, admin)
                             break
