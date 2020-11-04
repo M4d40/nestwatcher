@@ -268,8 +268,8 @@ class Park():
         self.mon_id = mid
         self.mon_count = amount
         self.mon_avg = round(
-                (amount / float(self._config.hours_since_change)) * (
-                    24.00 / float(hours)), 2)
+                (amount / float(hours)) * (
+                    24.00 / float(self._config.hours_since_change)), 2)
         self.mon_ratio = self.mon_avg / spawns
 
     def generate_details(self, area_file, nr):
