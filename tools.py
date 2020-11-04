@@ -27,9 +27,9 @@ wanted = list_options(tools)
 config = Config()
 
 if wanted == "1":
-    print("The Discord Bot configured in config/config.ini will now ask you to name every park saved in area_data/.\nPlease type the Channel ID you want to do that in.\nThe bot will not check for permissions, so make sure the channel can only be accessed by you and the bot.")
+    print("Okay, now put the name of the area you want the bot to go through. Then go to a channel the bot as access to and write 'start', then follow the instructions on Discord.\n\nPlease note that:\n - The bot needs Manage Messages Perms (you may also want to do it in a private channel)\n - You have a tileserver configured")
     areaname = input("Area: ")
-    print("Starting the bot now. Please head over to the channel and follow your bot's instructions.")
+    print("Starting the bot now. Please write 'start' and follow your bot's instructions.")
 
     bot = discord.Client()
     @bot.event
@@ -87,51 +87,54 @@ if wanted == "1":
                 osm_link = f"https://www.openstreetmap.org/{poly_type}/{nest_id}"
                 g_link = f"https://www.google.com/maps?q={lat},{lon}"
                 description = get_desc(name, lat, lon, osm_link, g_link)
-                
-                lats = []
-                lons = []
-                for poly in poly_path:
-                    lats += [lat for lat, lon in poly]
-                    lons += [lon for lat, lon in poly]
-                maxlat = max(lats)
-                minlat = min(lats)
-                maxlon = max(lons)
-                minlon = min(lons)
-                center_lat = minlat + ((maxlat - minlat) / 2)
-                center_lon = minlon + ((maxlon - minlon) / 2)
-                zoom = get_zoom(
-                    [maxlat, maxlon],
-                    [minlat, minlon],
-                    1000,
-                    600,
-                    256
-                )
-                static_map_data = {
-                    "style": "osm-bright",
-                    "latitude": center_lat,
-                    "longitude": center_lon,
-                    "zoom": zoom,
-                    "width": 1000,
-                    "height": 600,
-                    "scale": 1,
-                    "polygons": []
-                }
-                for polygon in poly_path:
-                    static_map_data["polygons"].append({
-                        "fill_color": "rgba(48,227,116,0.4)",
-                        "stroke_color": "rgba(15,166,128,0.9)",
-                        "stroke_width": 2,
-                        "path": polygon
-                    })
-                #print(json.dumps(static_map_data,indent=4))
 
-                result = requests.post(config.static_url + "staticmap?pregenerate=true", json=static_map_data)
-                if "error" in result.text:
-                    print(f"Error while generating Static Map:\n\n{static_map_data}\n{result.text}\n")
-                    static_map_data["polygons"] = []
+                if len(config.static_url) > 0:     
+                    lats = []
+                    lons = []
+                    for poly in poly_path:
+                        lats += [lat for lat, lon in poly]
+                        lons += [lon for lat, lon in poly]
+                    maxlat = max(lats)
+                    minlat = min(lats)
+                    maxlon = max(lons)
+                    minlon = min(lons)
+                    center_lat = minlat + ((maxlat - minlat) / 2)
+                    center_lon = minlon + ((maxlon - minlon) / 2)
+                    zoom = get_zoom(
+                        [maxlat, maxlon],
+                        [minlat, minlon],
+                        1000,
+                        600,
+                        256
+                    )
+                    static_map_data = {
+                        "style": "osm-bright",
+                        "latitude": center_lat,
+                        "longitude": center_lon,
+                        "zoom": zoom,
+                        "width": 1000,
+                        "height": 600,
+                        "scale": 1,
+                        "polygons": []
+                    }
+                    for polygon in poly_path:
+                        static_map_data["polygons"].append({
+                            "fill_color": "rgba(48,227,116,0.4)",
+                            "stroke_color": "rgba(15,166,128,0.9)",
+                            "stroke_width": 2,
+                            "path": polygon
+                        })
+                    #print(json.dumps(static_map_data,indent=4))
+
                     result = requests.post(config.static_url + "staticmap?pregenerate=true", json=static_map_data)
-                static_map = config.static_url + f"staticmap/pregenerated/{result.text}"
-                requests.get(static_map)
+                    if "error" in result.text:
+                        print(f"Error while generating Static Map:\n\n{static_map_data}\n{result.text}\n")
+                        static_map_data["polygons"] = []
+                        result = requests.post(config.static_url + "staticmap?pregenerate=true", json=static_map_data)
+                    static_map = config.static_url + f"staticmap/pregenerated/{result.text}"
+                    requests.get(static_map)
+                else:
+                    static_map = ""
                 
                 embed = discord.Embed(description=description)
                 embed.set_image(url=static_map)
