@@ -237,7 +237,7 @@ elif wanted == "3":
 
     print("Fetching data now. This may take a while")
     queries = Queries(config)
-    queries.nest_cursor.execute(f"select name, nest_id, type from nests WHERE ST_CONTAINS(ST_GEOMFROMTEXT('POLYGON({area.sql_fence})'), point(lat, lon)) order by pokemon_avg desc;")
+    queries.nest_cursor.execute(f"select name, nest_id, polygon_type from nests WHERE ST_CONTAINS(ST_GEOMFROMTEXT('POLYGON({area.sql_fence})'), point(lat, lon)) order by pokemon_avg desc;")
     nests = queries.nest_cursor.fetchall()
 
     query = ""
