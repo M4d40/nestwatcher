@@ -81,7 +81,7 @@ if wanted == "1":
             def get_desc(name, lat, lon, osm_link, g_link):
                 return f"Name: **{name}**\nCenter: `{round(lat, 5)},{round(lon, 6)}`\n\n[OSM Link]({osm_link}) | [Google Maps]({g_link})"
 
-            for nest_id, name, lat, lon, poly_path, poly_type in nests:
+            for i, (nest_id, name, lat, lon, poly_path, poly_type) in enumerate(nests, start=1):
                 poly_path = json.loads(poly_path)
                 poly_type = "way" if poly_path == 0 else "relation"
                 osm_link = f"https://www.openstreetmap.org/{poly_type}/{nest_id}"
@@ -138,6 +138,7 @@ if wanted == "1":
                 
                 embed = discord.Embed(description=description)
                 embed.set_image(url=static_map)
+                embed.set_footer(text=f"Page {i}/{len(nests)}")
                 await message.edit(embed=embed)
 
                 def m_check(m):
@@ -158,6 +159,7 @@ if wanted == "1":
                             await m.delete()
                             await message.remove_reaction(reaction, admin)
                             embed.description = get_desc(name, lat, lon, osm_link, g_link)
+                            embed.set_footer(text=f"Page {i}/{len(nests)}")
                             await message.edit(embed=embed)
 
                             with open(file_name, "w") as f:
@@ -171,6 +173,7 @@ if wanted == "1":
                             await m.delete()
                             await message.remove_reaction(reaction, admin)
                             embed.description = get_desc(name, points[0], points[1], osm_link, g_link)
+                            embed.set_footer(text=f"Page {i}/{len(nests)}")
                             await message.edit(embed=embed)
 
                             with open(file_name, "w") as f:
