@@ -242,7 +242,7 @@ elif wanted == "3":
 
     query = ""
     for name, nestid, nesttype in nests:
-        way = "way" if nesttype == 0 else "relation"
+        way = "way" if nesttype == 0 else "rel"
         query += f"{way}({nestid});"
     
     data = f"[out:json];({query});out body;>;out skel qt;"
