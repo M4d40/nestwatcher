@@ -221,10 +221,6 @@ if len(discord_webhook_data) > 0:
         if text not in entries:
             entries.append(text)
 
-        print(entry_list)
-        print("\n\n")
-
-        print(entries)
 
         for i, entry in enumerate(entries):
             embed = {
@@ -239,7 +235,6 @@ if len(discord_webhook_data) > 0:
                 if key in embed_dict.keys():
                     embed[key] = embed_dict[key]
         
-            print(embed)
             r = requests.post(webhook_link, json={"embeds": [embed]})
             log.success(f"Sent Webhook for {area.name} ({r.status_code})")
             time.sleep(1)
