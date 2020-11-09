@@ -11,7 +11,8 @@ from utils.queries import Queries
 
 tools = {
     "1": "Update area_data using Discord",
-    "2": "Migrate data to a newer version"
+    "2": "Migrate data to a newer version",
+    "3": "Update area_data using up-to-date OSM data"
 }
 
 print("What are you looking for?")
@@ -222,3 +223,54 @@ elif wanted == "2":
                 with open(area_file_name.replace(".csv", ".json"), "w+") as f:
                     f.write(json.dumps(area_file_data, indent=4))
         print("Done!")
+
+elif wanted == "3":
+    areaname = input("Area: ")
+    with open("config/areas.json", "r") as f:
+        areas = json.load(f)
+        area = Area([a for a in areas if a["name"] == areaname][0], None)
+
+    file_name = f"data/area_data/{areaname}.json"
+    with open(file_name, "r") as f:
+        area_data = json.load(f)
+
+
+    print("Fetching data now. This may take a while")
+    queries = Queries(config)
+    queries.nest_cursor.execute(f"select name, nest_id, type from nests WHERE ST_CONTAINS(ST_GEOMFROMTEXT('POLYGON({area.sql_fence})'), point(lat, lon)) order by pokemon_avg desc;")
+    nests = queries.nest_cursor.fetchall()
+
+    query = ""
+    for name, nestid, nesttype in nests:
+        way = "way" if nesttype == 0 else "relation"
+        query += f"{way}({nestid});"
+    
+    data = f"[out:json];({query});out body;>;out skel qt;"
+    r = requests.post("http://overpass-api.de/api/interpreter", data=data)
+
+    names = {}
+    elements = r.json()["elements"]
+    for element in elements:
+        tags = element.get("tags", {})
+        name = tags.get("name", tags.get("official_name", None))
+        if name is not None:
+            names[element["id"]] = name
+
+    for name, nestid, nesttype in nests:
+        new_name = names.get(nestid, None)
+        if new_name is None:
+            continue
+        if new_name == name:
+            continue
+    
+        print(f"[{nestid}] {name} -> {new_name}")
+        confirm = ""
+        while confirm.lower() not in ("y", "n"):
+            confirm = input("y/n ")
+        
+        if confirm.lower() == "y":
+            area_data[str(nestid)]["name"] = name
+            with open(file_name, "w") as f:
+                f.write(json.dumps(area_data, indent=4))
+        else:
+            continue
