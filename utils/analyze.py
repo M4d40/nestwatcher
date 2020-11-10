@@ -50,6 +50,13 @@ def analyze_nests(config, area, nest_mons, queries, reset_time):
     except FileNotFoundError:
         pass
 
+    """db_file_name = f"data/db_data/{area.name}.json"
+    try:
+        with open(db_file_name, mode="r", encoding="utf-8") as db_file:
+            db_data = json.load(db_file)
+    except FileNotFoundError:
+        db_data = {}"""
+
     log.info(f"Got all relevant information. Searching for nests in {area.name} now")
 
     nodes = {}

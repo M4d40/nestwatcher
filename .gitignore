@@ -6,7 +6,9 @@ default.ini
 # Ignore the data folders
 data/area_data/*.csv
 data/osm_data/*.json
+data/db_data/*.json
 data/emotes.json
 data/custom_emotes.json
 
 */__pycache__/*
+*test*
