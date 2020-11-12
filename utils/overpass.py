@@ -56,4 +56,7 @@ def get_osm_data(bbox, date):
     data = data.format(bbox=bbox, date=date)
 
     r = requests.post("http://overpass-api.de/api/interpreter", data=data)
-    return r.json()
+    try:
+        return r.json()
+    except:
+        {"remark": "No json format"}

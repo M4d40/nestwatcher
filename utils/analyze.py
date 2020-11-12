@@ -27,14 +27,14 @@ def analyze_nests(config, area, nest_mons, queries, reset_time):
         osm_time_start = timeit.default_timer()
         nest_json = get_osm_data(area.bbox, OSM_DATE)
         osm_time_stop = timeit.default_timer()
+        seconds = round(osm_time_stop - osm_time_start, 1)
         if not nest_json["elements"]:
-            log.error("Did not get any data from overpass. Because of that, the script will now error out. Please try again in a few hours, since you were rate-limited by overpass. If this still doesn't help, try splitting up your area.")
-            if "remark" in nest_json:
-                log.error(nest_json["remark"])
+            log.error(f"Did not get any data from overpass in {seconds} seconds. Because of that, the script will now error out. Please try again in a few hours, since you were rate-limited by overpass. If this still doesn't help, try splitting up your area.")
+            log.error(nest_json.get("remark"))
             return
         with open(osm_file_name, mode='w', encoding="utf-8") as osm_file:
             osm_file.write(json.dumps(nest_json, indent=4))
-        log.success(f"Done. Got all OSM data in {round(osm_time_stop - osm_time_start, 1)} seconds and saved it.")
+        log.success(f"Done. Got all OSM data in {seconds} seconds and saved it.")
 
     # Getting area data
 
