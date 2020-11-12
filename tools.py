@@ -269,8 +269,11 @@ elif wanted == "3":
             confirm = input("y/n ")
         
         if confirm.lower() == "y":
-            area_data[str(nestid)]["name"] = name
-            with open(file_name, "w") as f:
-                f.write(json.dumps(area_data, indent=4))
+            try:
+                area_data[str(nestid)]["name"] = name
+                with open(file_name, "w") as f:
+                    f.write(json.dumps(area_data, indent=4))
+            except Exception as e:
+                print(f"Got error {e}")
         else:
             continue

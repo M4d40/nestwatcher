@@ -4,7 +4,7 @@ def get_osm_data(bbox, date):
     data = """
     [out:json]
     [date:"{date}"]
-    [timeout:100000000000000]
+    [timeout:100000]
     [bbox:{bbox}];
     (
         way[leisure=park];
