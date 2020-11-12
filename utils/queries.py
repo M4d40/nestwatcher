@@ -59,7 +59,7 @@ class Queries():
 
         elif config.scanner == "mad":
             pokestop_select = ""
-            spawnpoint_select = """SELECT spawnpoint
+            spawnpoint_select = """SELECT spawnpoint, latitude, longitude
             FROM trs_spawn
             WHERE ST_CONTAINS(ST_GEOMFROMTEXT('MULTIPOLYGON(({area}))'), point(latitude, longitude))
             """

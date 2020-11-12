@@ -128,6 +128,9 @@ def analyze_nests(config, area, nest_mons, queries, reset_time):
                 parks.pop(small_park_i)
 
         # NOW CHECK ALL AREAS ONE AFTER ANOTHER
+        all_spawns = queries.spawns(area.sql_fence)
+        all_spawns = [(str(_id), geometry.Point(lon, lat)) for _id, lat, lon in all_spawns]
+
         check_nest_task = progress.add_task("Nests found: 0", total=len(parks))
         nests = []
 
@@ -150,7 +153,7 @@ def analyze_nests(config, area, nest_mons, queries, reset_time):
                     stops.append(str(pkstp[0]))
                 pokestop_in = "'{}'".format("','".join(stops))
 
-            spawns = [str(s[0]) for s in queries.spawns(park.sql_fence)]
+            spawns = [s[0] for s in all_spawns if park.polygon.contains(s[1])]
 
             if not stops and not spawns:
                 failed_nests["No Stops or Spawnpoints"] += 1
