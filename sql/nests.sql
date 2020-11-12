@@ -15,5 +15,5 @@ CREATE TABLE `nests` (
   PRIMARY KEY (`nest_id`),
   KEY `CoordsIndex` (`lat`,`lon`),
   KEY `UpdatedIndex` (`updated`)
-) ENGINE=InnoDB AUTO_INCREMENT=671440879 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 ;

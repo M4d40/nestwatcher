@@ -59,4 +59,4 @@ def get_osm_data(bbox, date):
     try:
         return r.json()
     except:
-        {"remark": "No json format"}
+        {"remark": r.content}
