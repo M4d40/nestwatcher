@@ -1,6 +1,7 @@
 import json
 import time
 import timeit
+import requests
 
 from rich.progress import Progress
 from shapely import geometry
@@ -23,6 +24,20 @@ def analyze_nests(config, area, nest_mons, queries, reset_time):
         with open(osm_file_name, mode="r", encoding="utf-8") as osm_file:
             nest_json = json.load(osm_file)
     except (IOError, OSError):
+        free_slot = False
+        while not free_slot:
+            r = requests.get("http://overpass-api.de/api/status").text
+            if "available now" in r:
+                free_slot = True
+            else:
+                if "Slot available after" in r:
+                    rate_seconds = int(r.split(", in ")[1].split(" seconds.")[0]) + 5
+                    log.warning(f"Overpass is rate-limiting you. Gonna have to wait {rate_seconds} seconds before continuing")
+                    time.sleep(rate_seconds)
+                else:
+                    log.warning("Had trouble finding out about your overpass status. Waiting 1 minute before trying again")
+                    time.sleep(60)
+
         log.info("Getting OSM data. This will take ages if this is your first run.")
         osm_time_start = timeit.default_timer()
         nest_json = get_osm_data(area.bbox, OSM_DATE)
