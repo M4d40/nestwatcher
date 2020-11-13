@@ -8,6 +8,7 @@ class Config:
         self.hours_since_change = 3
         self.auto_time = config_file.getboolean("Config", "auto_time", fallback=True)
         self.use_events = config_file.getboolean("Config", "events", fallback=True)
+        self.less_queries = config_file.getboolean("Config", "less_queries", fallback=False)
         self.pokestop_pokemon = config_file.getboolean("Config", "pokestop_pokemon")
         self.in_meganest = config_file.getboolean("Config", "i_scan_berlin", fallback=False)
         self.workers = 5

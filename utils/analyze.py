@@ -103,6 +103,10 @@ def analyze_nests(config, area, nest_mons, queries, reset_time):
     double_ways = []
 
     start = timeit.default_timer()
+
+    if config.less_queries:
+        all_spawns = queries.spawns(area.sql_fence)
+        all_spawns = [(str(_id), geometry.Point(lon, lat)) for _id, lat, lon in all_spawns]
     
     with Progress() as progress:
         check_rels_task = progress.add_task("Generating Polygons", total=len(parks))
@@ -128,9 +132,6 @@ def analyze_nests(config, area, nest_mons, queries, reset_time):
                 parks.pop(small_park_i)
 
         # NOW CHECK ALL AREAS ONE AFTER ANOTHER
-        all_spawns = queries.spawns(area.sql_fence)
-        all_spawns = [(str(_id), geometry.Point(lon, lat)) for _id, lat, lon in all_spawns]
-
         check_nest_task = progress.add_task("Nests found: 0", total=len(parks))
         nests = []
 
@@ -153,7 +154,10 @@ def analyze_nests(config, area, nest_mons, queries, reset_time):
                     stops.append(str(pkstp[0]))
                 pokestop_in = "'{}'".format("','".join(stops))
 
-            spawns = [s[0] for s in all_spawns if park.polygon.contains(s[1])]
+            if config.less_queries:
+                spawns = [s[0] for s in all_spawns if park.polygon.contains(s[1])]
+            else:
+                spawns = [str(s[0]) for s in queries.spawns(park.sql_fence)]
 
             if not stops and not spawns:
                 failed_nests["No Stops or Spawnpoints"] += 1
@@ -164,17 +168,6 @@ def analyze_nests(config, area, nest_mons, queries, reset_time):
             spawnpoint_in = "'{}'".format("','".join(spawns))
             if spawnpoint_in == "''": spawnpoint_in = "NULL" # This will handle the SQL warning since a blank string shouldn't be used for a number
 
-            # RDM uses pokestop_ids, MAD not
-            """if config.pokestop_pokemon:
-                _city_progress(idx, areas_len, "({}/{}) {}".format(
-                    idx,
-                    areas_len,
-                    "Get all Pokes from stops and spawnpoints within nest area"))
-            else:
-                _city_progress(idx, areas_len, "({}/{}) {}".format(
-                    idx,
-                    areas_len,
-                    "Get all Pokes from spawnpoints within nest area"))"""
 
             poke_data = queries.mons(spawnpoint_in, str(tuple(nest_mons)), str(reset_time), pokestop_in)
             if poke_data is None:
