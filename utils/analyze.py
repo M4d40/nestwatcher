@@ -108,7 +108,7 @@ def analyze_nests(config, area, nest_mons, queries, reset_time):
         log.info("Getting data from the db")
         all_spawns = [(str(_id), geometry.Point(lon, lat)) for _id, lat, lon in queries.spawns(area.sql_fence)]
         log.info("Got Spawns")
-        all_mons = queries.all_mons(str(tuple(nest_mons)), str(reset_time))
+        all_mons = queries.all_mons(str(tuple(nest_mons)), str(reset_time), area.sql_fence)
         all_mons = [(_id, geometry.Point(lon, lat)) for _id, lat, lon in all_mons]
         log.info("Got Mons")
     

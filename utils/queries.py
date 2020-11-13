@@ -61,6 +61,8 @@ class Queries():
             WHERE (
                 pokemon_id IN {nest_mons}
                 AND
+                ST_CONTAINS(ST_GEOMFROMTEXT('POLYGON({area})'), point(lat, lon))
+                AND
                 first_seen_timestamp >= {reset_time})
             )
             """
@@ -86,6 +88,8 @@ class Queries():
             FROM pokemon
             WHERE (
                 pokemon_id IN {nest_mons}
+                AND
+                ST_CONTAINS(ST_GEOMFROMTEXT('POLYGON({area})'), point(latitude, longitude))
                 AND
                 UNIX_TIMESTAMP(last_modified) >= {reset_time})
             GROUP BY pokemon_id
@@ -151,8 +155,8 @@ class Queries():
         self.cursor.execute(query)
         return self.cursor.fetchone()
     
-    def all_mons(self, mons, time):
-        query = self.queries["all_mons"].format(nest_mons=mons, reset_time=time)
+    def all_mons(self, mons, time, fence):
+        query = self.queries["all_mons"].format(nest_mons=mons, reset_time=time, area=fence)
         self.cursor.execute(query)
         return self.cursor.fetchall()
 
