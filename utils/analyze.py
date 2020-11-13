@@ -175,7 +175,7 @@ def analyze_nests(config, area, nest_mons, queries, reset_time):
             if config.less_queries:
                 poke_data = []
                 mons = [s[0] for s in all_mons if park.polygon.contains(s[1])]
-                if len(mons):
+                if len(mons) == 0:
                     failed_nests["No Pokemon"] += 1
                     continue
                 most_id = max(set(mons), key=mons.count)
