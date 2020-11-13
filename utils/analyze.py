@@ -173,13 +173,12 @@ def analyze_nests(config, area, nest_mons, queries, reset_time):
             if spawnpoint_in == "''": spawnpoint_in = "NULL" # This will handle the SQL warning since a blank string shouldn't be used for a number
 
             if config.less_queries:
-                poke_data = []
                 mons = [s[0] for s in all_mons if park.polygon.contains(s[1])]
                 if len(mons) == 0:
                     failed_nests["No Pokemon"] += 1
                     continue
                 most_id = max(set(mons), key=mons.count)
-                poke_data.append(most_id, mons.count(most_id))
+                poke_data = [most_id, mons.count(most_id)]
 
             else:
                 poke_data = queries.mons(spawnpoint_in, str(tuple(nest_mons)), str(reset_time), pokestop_in)
