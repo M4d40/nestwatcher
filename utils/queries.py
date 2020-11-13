@@ -63,7 +63,7 @@ class Queries():
                 AND
                 ST_CONTAINS(ST_GEOMFROMTEXT('POLYGON({area})'), point(lat, lon))
                 AND
-                first_seen_timestamp >= {reset_time})
+                first_seen_timestamp >= {reset_time}
             )
             """
 
@@ -100,7 +100,7 @@ class Queries():
             WHERE (
                 pokemon_id IN {nest_mons}
                 AND
-                UNIX_TIMESTAMP(last_modified) >= {reset_time})
+                UNIX_TIMESTAMP(last_modified) >= {reset_time}
             )
             """
 
