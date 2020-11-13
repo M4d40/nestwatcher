@@ -29,7 +29,8 @@ config = Config(config_path)
 # Auto migration time
 if config.auto_time:
     last_migration_timestamp = requests.get("https://raw.githubusercontent.com/ccev/pogoinfo/info/last-nest-migration").text
-    last_migration = datetime.fromtimestamp(int(last_migration_timestamp))
+    last_migration = datetime.fromtimestamp(int(last_migration_timestamp)) 
+    td = datetime.utcnow() - last_migration
 
     local_time = datetime.now()
     events = requests.get("https://raw.githubusercontent.com/ccev/pogoinfo/info/events/all.json").json()
@@ -42,13 +43,10 @@ if config.auto_time:
         event_end = datetime.strptime(event["end"], "%Y-%m-%d %H:%M")
 
         if event_end < local_time:
-            last_migration = event_end
+            td = local_time - event_end
         else:
-            last_migration = event_start
+            td = local_time - event_start
 
-
-    current_time = datetime.utcnow()
-    td = current_time - last_migration
     days, seconds = td.days, td.seconds
     config.hours_since_change = math.floor(days * 24 + seconds / 3600)
     log.success(f"Hours since last migration: {config.hours_since_change}")
