@@ -10,7 +10,7 @@ from datetime import datetime
 from geojson import FeatureCollection, dumps
 
 from utils.area import Area
-from utils.analyze import analyze_nests
+from utils.area_utils import analyze_nests
 from utils.config import Config
 from utils.logging import log
 from utils.queries import Queries
@@ -20,6 +20,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-c", "--config", default="config/config.ini", help="Config file to use")
 parser.add_argument("-t", "--hours", default=None, help="Hours since last migration")
 parser.add_argument("-a", "--area", default=None, help="A specific area to analyze")
+parser.add_argument("-w", "--workers", default=None, help="Amount of max workers to use")
 parser.add_argument("-ne", "--noevents", action='store_true', help="Ignore event data")
 parser.add_argument("-nd", "--nodelete", action='store_true', help="Don't delete nests")
 args = parser.parse_args()
@@ -58,6 +59,9 @@ if args.hours is not None:
     log.info(f"Overwriting hours since change with {config.hours_since_change}")
 if args.noevents:
     config.use_events = False
+if args.workers is not None:
+    config.workers = int(args.workers)
+    log.info(f"Using {config.workers} workers")
 
 with open("config/areas.json", "r") as area_file:
     areas = json.load(area_file)
