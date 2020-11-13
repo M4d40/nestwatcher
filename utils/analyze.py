@@ -105,21 +105,19 @@ def analyze_nests(config, area, nest_mons, queries, reset_time):
     start = timeit.default_timer()
 
     if config.less_queries:
-        log.info("Getting data from the db")
+        log.info("Getting DB data")
         all_spawns = [(str(_id), geometry.Point(lon, lat)) for _id, lat, lon in queries.spawns(area.sql_fence)]
-        log.info("Got Spawns")
         all_mons = queries.all_mons(str(tuple(nest_mons)), str(reset_time), area.sql_fence)
         all_mons = [(_id, geometry.Point(lon, lat)) for _id, lat, lon in all_mons]
-        log.info("Got Mons")
     
     with Progress() as progress:
-        check_rels_task = progress.add_task("Generating Polygons", total=len(parks))
+        #check_rels_task = progress.add_task("Generating Polygons", total=len(parks))
         for park in relations:
             double_ways = park.get_polygon(nodes, ways, double_ways)
-            progress.update(check_rels_task, advance=1)
+            #progress.update(check_rels_task, advance=1)
         for park in ways:
             park.get_polygon(nodes)
-            progress.update(check_rels_task, advance=1)
+            #progress.update(check_rels_task, advance=1)
 
         for osm_id, data in area_file_data.items():
             for connect_id in data["connect"]:

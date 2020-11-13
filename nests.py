@@ -37,6 +37,8 @@ if config.auto_time:
     for event in events:
         if not event["type"] == "Event":
             continue
+        if event["start"] is None:
+            continue
         event_start = datetime.strptime(event["start"], "%Y-%m-%d %H:%M")
         if event_start <= last_migration or event_start > local_time:
             continue
@@ -57,12 +59,13 @@ if args.hours is not None:
 if args.noevents:
     config.use_events = False
 
-with open("config/areas.json", "r") as f:
-    areas = json.load(f)
-with open("config/settings.json", "r") as f:
-    settings = json.load(f)
+with open("config/areas.json", "r") as area_file:
+    areas = json.load(area_file)
+with open("config/settings.json", "r") as settings_file:
+    settings = json.load(settings_file)
 
 if args.area is not None:
+    args.nodelete = True
     areas = [a for a in areas if a["name"] == args.area]
     if len(areas) == 0:
         log.error("Couldn't find that area. Maybe check capitalization")
