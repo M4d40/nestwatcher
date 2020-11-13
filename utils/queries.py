@@ -56,6 +56,14 @@ class Queries():
             GROUP BY pokemon_id
             ORDER BY count desc
             LIMIT 1"""
+            all_mons = """SELECT pokemon_id, lat, lon
+            FROM pokemon
+            WHERE (
+                pokemon_id IN {nest_mons}
+                AND
+                first_seen_timestamp >= {reset_time})
+            )
+            """
 
         elif config.scanner == "mad":
             pokestop_select = ""
@@ -83,6 +91,14 @@ class Queries():
             GROUP BY pokemon_id
             ORDER BY count desc
             LIMIT 1"""
+            all_mons = """SELECT pokemon_id, latitude, longitude
+            FROM pokemon
+            WHERE (
+                pokemon_id IN {nest_mons}
+                AND
+                UNIX_TIMESTAMP(last_modified) >= {reset_time})
+            )
+            """
 
         nest_delete = "DELETE FROM nests"
         nest_insert = """INSERT INTO nests (
@@ -133,6 +149,11 @@ class Queries():
 
         self.cursor.execute(query)
         return self.cursor.fetchone()
+    
+    def all_mons(self, mons, time):
+        query = self.queries["all_mons"].format(nest_mons=mons, reset_time=time)
+        self.cursor.execute(query)
+        return self.cursor.fetchall()
 
     def most_mon(self, mons, time):
         self.cursor.execute(self.queries["most_mon"].format(nest_mons=mons, reset_time=time))

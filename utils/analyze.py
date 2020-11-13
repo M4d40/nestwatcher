@@ -105,8 +105,12 @@ def analyze_nests(config, area, nest_mons, queries, reset_time):
     start = timeit.default_timer()
 
     if config.less_queries:
-        all_spawns = queries.spawns(area.sql_fence)
-        all_spawns = [(str(_id), geometry.Point(lon, lat)) for _id, lat, lon in all_spawns]
+        log.info("Getting data from the db")
+        all_spawns = [(str(_id), geometry.Point(lon, lat)) for _id, lat, lon in queries.spawns(area.sql_fence)]
+        log.info("Got Spawns")
+        all_mons = queries.all_mons(str(tuple(nest_mons)), str(reset_time))
+        all_mons = [(_id, geometry.Point(lon, lat)) for _id, lat, lon in all_mons]
+        log.info("Got Mons")
     
     with Progress() as progress:
         check_rels_task = progress.add_task("Generating Polygons", total=len(parks))
@@ -168,10 +172,21 @@ def analyze_nests(config, area, nest_mons, queries, reset_time):
             spawnpoint_in = "'{}'".format("','".join(spawns))
             if spawnpoint_in == "''": spawnpoint_in = "NULL" # This will handle the SQL warning since a blank string shouldn't be used for a number
 
+            if config.less_queries:
+                poke_data = []
+                mons = [s[0] for s in all_mons if park.polygon.contains(s[1])]
+                if len(mons):
+                    failed_nests["No Pokemon"] += 1
+                    continue
+                most_id = max(set(mons), key=mons.count)
+                poke_data.append(most_id, mons.count(most_id))
 
-            poke_data = queries.mons(spawnpoint_in, str(tuple(nest_mons)), str(reset_time), pokestop_in)
-            if poke_data is None:
-                continue
+            else:
+                poke_data = queries.mons(spawnpoint_in, str(tuple(nest_mons)), str(reset_time), pokestop_in)
+
+                if poke_data is None:
+                    failed_nests["No Pokemon"] += 1
+                    continue
             park.mon_data(poke_data[0], poke_data[1], area.settings['scan_hours_per_day'], len(spawns) + len(stops))
 
             if park.mon_count < area.settings['min_pokemon']:
