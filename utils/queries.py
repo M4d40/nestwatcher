@@ -89,8 +89,6 @@ class Queries():
             WHERE (
                 pokemon_id IN {nest_mons}
                 AND
-                ST_CONTAINS(ST_GEOMFROMTEXT('POLYGON({area})'), point(latitude, longitude))
-                AND
                 UNIX_TIMESTAMP(last_modified) >= {reset_time})
             GROUP BY pokemon_id
             ORDER BY count desc
@@ -99,6 +97,8 @@ class Queries():
             FROM pokemon
             WHERE (
                 pokemon_id IN {nest_mons}
+                AND
+                ST_CONTAINS(ST_GEOMFROMTEXT('POLYGON({area})'), point(latitude, longitude))
                 AND
                 UNIX_TIMESTAMP(last_modified) >= {reset_time}
             )
