@@ -129,7 +129,8 @@ class Queries():
             "mons": mon_select,
             "nest_delete": nest_delete,
             "nest_insert": nest_insert,
-            "most_mon": most_mon
+            "most_mon": most_mon,
+            "all_mons": all_mons
         }
 
     def stops(self, area):
