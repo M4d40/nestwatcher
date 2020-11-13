@@ -21,6 +21,7 @@ parser.add_argument("-c", "--config", default="config/config.ini", help="Config 
 parser.add_argument("-t", "--hours", default=None, help="Hours since last migration")
 parser.add_argument("-a", "--area", default=None, help="A specific area to analyze")
 parser.add_argument("-ne", "--noevents", action='store_true', help="Ignore event data")
+parser.add_argument("-nd", "--nodelete", action='store_true', help="Don't delete nests")
 args = parser.parse_args()
 config_path = args.config
 config = Config(config_path)
@@ -107,7 +108,8 @@ log.debug(nest_mons)
 # DB
 log.info("Establishing DB connection and deleting current nests")
 queries = Queries(config)
-queries.nest_delete()
+if not args.nodelete:
+    queries.nest_delete()
 
 # Meganests
 if config.in_meganest:
