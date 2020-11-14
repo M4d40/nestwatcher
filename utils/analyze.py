@@ -8,12 +8,10 @@ from shapely import geometry
 from shapely.ops import polylabel, cascaded_union
 from geojson import Feature
 from collections import defaultdict
-from concurrent.futures.thread import ThreadPoolExecutor
 
 from utils.logging import log
 from utils.overpass import get_osm_data
 from utils.area import WayPark, RelPark
-from utils.nest_filter import nest_filter
 
 OSM_DATE = "2019-02-24T00:00:00Z"
 
@@ -106,56 +104,124 @@ def analyze_nests(config, area, nest_mons, queries, reset_time):
 
     start = timeit.default_timer()
 
-    all_mons = None
-    all_spawns = None
     if config.less_queries:
         log.info("Getting DB data")
         all_spawns = [(str(_id), geometry.Point(lon, lat)) for _id, lat, lon in queries.spawns(area.sql_fence)]
         all_mons = queries.all_mons(str(tuple(nest_mons)), str(reset_time), area.sql_fence)
         all_mons = [(_id, geometry.Point(lon, lat)) for _id, lat, lon in all_mons]
-
-    for park in relations:
-        double_ways = park.get_polygon(nodes, ways, double_ways)
-    for park in ways:
-        park.get_polygon(nodes)
-
-    for osm_id, data in area_file_data.items():
-        for connect_id in data["connect"]:
-            for i, park in enumerate(parks):
-                if park.id == osm_id:
-                    big_park = park
-                    big_park_i = i
-                if park.id == connect_id:
-                    small_park = park
-                    small_park_i = i
-
-            parks[big_park_i].connect.append(connect_id)
-            parks[big_park_i].polygon = cascaded_union([big_park.polygon, small_park.polygon])
-            parks.pop(small_park_i)
     
     with Progress() as progress:
+        #check_rels_task = progress.add_task("Generating Polygons", total=len(parks))
+        for park in relations:
+            double_ways = park.get_polygon(nodes, ways, double_ways)
+            #progress.update(check_rels_task, advance=1)
+        for park in ways:
+            park.get_polygon(nodes)
+            #progress.update(check_rels_task, advance=1)
+
+        for osm_id, data in area_file_data.items():
+            for connect_id in data["connect"]:
+                for i, park in enumerate(parks):
+                    if park.id == osm_id:
+                        big_park = park
+                        big_park_i = i
+                    if park.id == connect_id:
+                        small_park = park
+                        small_park_i = i
+
+                parks[big_park_i].connect.append(connect_id)
+                parks[big_park_i].polygon = cascaded_union([big_park.polygon, small_park.polygon])
+                parks.pop(small_park_i)
+
         # NOW CHECK ALL AREAS ONE AFTER ANOTHER
         check_nest_task = progress.add_task("Nests found: 0", total=len(parks))
         nests = []
-        futures = []
-        """with ThreadPoolExecutor(max_workers=config.workers) as executor: 
-            for park in parks:
-                future = executor.submit(nest_filter, progress, check_nest_task, failed_nests, park, area, config, queries, all_mons, all_spawns, nest_mons, reset_time, double_ways, area_file_data)
-                futures.append(future)
-        
-        for future in futures:
-            park = future.result()
-            if park is not None:
-                nests.append(park)"""
 
-        args = []
-        for p in parks:
-            args.append((progress, check_nest_task, failed_nests, p, area, config, queries, all_mons, all_spawns, nest_mons, reset_time, double_ways, area_file_data))
-        
-        for park in ThreadPoolExecutor(config.workers).map(nest_filter, args):
-            if park is not None:
-                nests.append(park)
-            
+        for park in parks:
+            progress.update(check_nest_task, advance=1, description=f"Nests found: {failed_nests['Total Nests found']}")
+
+            if not park.is_valid:
+                failed_nests["Geometry is not valid"] += 1
+                continue
+
+            if not area.polygon.contains(park.polygon):
+                failed_nests["Not in Geofence"] += 1
+                continue
+
+            pokestop_in = None
+            stops = []
+            if config.scanner == "rdm" and config.pokestop_pokemon:
+                # Get all Pokestops with id, lat and lon
+                for pkstp in queries.stops(park.sql_fence):
+                    stops.append(str(pkstp[0]))
+                pokestop_in = "'{}'".format("','".join(stops))
+
+            if config.less_queries:
+                spawns = [s[0] for s in all_spawns if park.polygon.contains(s[1])]
+            else:
+                spawns = [str(s[0]) for s in queries.spawns(park.sql_fence)]
+
+            if not stops and not spawns:
+                failed_nests["No Stops or Spawnpoints"] += 1
+                continue
+            if (len(stops) < 1) and (len(spawns) < area.settings['min_spawnpoints']):
+                failed_nests["Not enough Spawnpoints"] += 1
+                continue
+            spawnpoint_in = "'{}'".format("','".join(spawns))
+            if spawnpoint_in == "''": spawnpoint_in = "NULL" # This will handle the SQL warning since a blank string shouldn't be used for a number
+
+            if config.less_queries:
+                mons = [s[0] for s in all_mons if park.polygon.contains(s[1])]
+                if len(mons) == 0:
+                    failed_nests["No Pokemon"] += 1
+                    continue
+                most_id = max(set(mons), key=mons.count)
+                poke_data = [most_id, mons.count(most_id)]
+
+            else:
+                poke_data = queries.mons(spawnpoint_in, str(tuple(nest_mons)), str(reset_time), pokestop_in)
+
+                if poke_data is None:
+                    failed_nests["No Pokemon"] += 1
+                    continue
+            park.mon_data(poke_data[0], poke_data[1], area.settings['scan_hours_per_day'], len(spawns) + len(stops))
+
+            if park.mon_count < area.settings['min_pokemon']:
+                failed_nests["Not enough Pokemon"] += 1
+                continue
+            if park.mon_avg < area.settings['min_average']:
+                failed_nests["Average spawnrate too low"] += 1
+                continue
+            if park.mon_ratio < area.settings['min_ratio']:
+                failed_nests["Average spawn ratio too low"] += 1
+                continue
+            if park.id in double_ways:
+                failed_nests["Avoiding double nests"] += 1
+                continue
+
+            park.generate_details(area_file_data, failed_nests["Total Nests found"])
+
+            # Insert Nest data to db
+            insert_args = {
+                "nest_id": park.id,
+                "name": park.name,
+                "form": park.mon_form,
+                "lat": park.lat,
+                "lon": park.lon,
+                "pokemon_id": park.mon_id,
+                "type": 0,
+                "pokemon_count": park.mon_count,
+                "pokemon_avg": park.mon_avg,
+                "pokemon_ratio": park.mon_ratio,
+                "poly_path": json.dumps(park.path),
+                "poly_type": 1 if isinstance(park, RelPark) else 0,
+                "current_time": int(time.time())
+            }
+
+            failed_nests["Total Nests found"] += 1
+            nests.append(park)
+
+            queries.nest_insert(insert_args)
     stop = timeit.default_timer()
     log.success(f"Done finding nests in {area.name} ({round(stop - start, 1)} seconds)")
     for k, v in failed_nests.items():

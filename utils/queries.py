@@ -3,32 +3,25 @@ import pymysql
 from datetime import datetime, timedelta 
 
 class Queries():
-    def get_connection(self):
-        return pymysql.connect(
-            host=self.config.db_host,
-            user=self.config.db_user,
-            password=self.config.db_password,
-            database=self.config.db_name,
-            port=self.config.db_port,
-            autocommit=True
-        )
-
-    def get_nest_connection(self):
-        return pymysql.connect(
-            host=self.config.nest_db_host,
-            user=self.config.nest_db_user,
-            password=self.config.nest_db_password,
-            database=self.config.nest_db_name,
-            port=self.config.nest_db_port,
-            autocommit=True
-        )
-
     def __init__(self, config):
-        self.config = config
-        self.connection = self.get_connection()
+        self.connection = pymysql.connect(
+            host=config.db_host,
+            user=config.db_user,
+            password=config.db_password,
+            database=config.db_name,
+            port=config.db_port,
+            autocommit=True
+        )
         self.cursor = self.connection.cursor()
 
-        self.nest_connection = self.get_nest_connection()
+        self.nest_connection = pymysql.connect(
+            host=config.nest_db_host,
+            user=config.nest_db_user,
+            password=config.nest_db_password,
+            database=config.nest_db_name,
+            port=config.nest_db_port,
+            autocommit=True
+        )
         self.nest_cursor = self.nest_connection.cursor()
 
         if config.scanner == "rdm":
@@ -148,33 +141,19 @@ class Queries():
         self.cursor.execute(self.queries["pokestops"].format(area=area))
         return self.cursor.fetchall()
 
-    def own_execute(self, query, connection, one=False, args=None):
-        cursor = connection.cursor()
-        if args is None:
-            cursor.execute(query)
-        else:
-            cursor.execute(query, args)
-        if one:
-            result = cursor.fetchone()
-        else:
-            result = cursor.fetchall()
-        cursor.close()
-        connection.close()
-        return result
-
     def spawns(self, area):
         query = self.queries["spawns"].format(area=area)
         #print(query + "\n\n")
-        connection = self.get_connection()
-        return self.own_execute(query, connection)
+        self.cursor.execute(query)
+        return self.cursor.fetchall()
     
     def mons(self, spawns, mons, time, pokestops=None):
         query = self.queries["mons"].format(spawnpoints=spawns, nest_mons=mons, reset_time=time, pokestops=pokestops)
         if not pokestops is None:
             query = query.format(pokestops=pokestops)
 
-        connection = self.get_connection()
-        return self.own_execute(query, connection, True)
+        self.cursor.execute(query)
+        return self.cursor.fetchone()
     
     def all_mons(self, mons, time, fence):
         query = self.queries["all_mons"].format(nest_mons=mons, reset_time=time, area=fence)
@@ -189,10 +168,7 @@ class Queries():
         self.nest_cursor.execute(self.queries["nest_delete"])
 
     def nest_insert(self, args):
-        query = self.queries["nest_insert"]
-        connection = self.get_nest_connection()
-
-        return self.own_execute(query, connection, args=args)
+        self.nest_cursor.execute(self.queries["nest_insert"], args)
 
     def close(self):
         self.cursor.close()
