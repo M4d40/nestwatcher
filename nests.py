@@ -40,14 +40,19 @@ if config.auto_time:
         if event["start"] is None:
             continue
         event_start = datetime.strptime(event["start"], "%Y-%m-%d %H:%M")
-        if event_start <= last_migration or event_start > local_time:
+        if event_start > local_time:
             continue
         event_end = datetime.strptime(event["end"], "%Y-%m-%d %H:%M")
-
+        
+        if event_end <= last_migration:
+            continue
+        
         if event_end < local_time:
             td = local_time - event_end
+            log.info(f"Overwriting nest migration with the end time of {event['name']}")
         else:
             td = local_time - event_start
+            log.info(f"Overwriting nest migration with the start time of {event['name']}")
 
     days, seconds = td.days, td.seconds
     config.hours_since_change = math.floor(days * 24 + seconds / 3600)
@@ -124,10 +129,8 @@ log.info("Got all nesting species")
 log.debug(nest_mons)
 
 # DB
-log.info("Establishing DB connection and deleting current nests")
+log.info("Establishing DB connection")
 queries = Queries(config)
-if not args.nodelete:
-    queries.nest_delete()
 
 # Meganests
 if config.in_meganest:
@@ -140,7 +143,7 @@ all_features = []
 full_areas = []
 for i, area in enumerate(areas):
     area_ = Area(area, area_settings[area["name"]])
-    nests = analyze_nests(config, area_, nest_mons, queries, reset_time)
+    nests = analyze_nests(config, area_, nest_mons, queries, reset_time, args.nodelete)
     area_.nests = nests
     full_areas.append(area_)
 

@@ -15,7 +15,7 @@ from utils.area import WayPark, RelPark
 
 OSM_DATE = "2019-02-24T00:00:00Z"
 
-def analyze_nests(config, area, nest_mons, queries, reset_time):
+def analyze_nests(config, area, nest_mons, queries, reset_time, nodelete):
 
     # Getting OSM/overpass data
     
@@ -71,6 +71,9 @@ def analyze_nests(config, area, nest_mons, queries, reset_time):
             db_data = json.load(db_file)
     except FileNotFoundError:
         db_data = {}"""
+    
+    if not nodelete:
+        queries.nest_delete(area.sql_fence)
 
     log.info(f"Got all relevant information. Searching for nests in {area.name} now")
 
