@@ -5,6 +5,8 @@ import json
 import sys
 import requests
 
+from configparser import ConfigParser
+
 from utils.config import Config
 from utils.area import get_zoom, Area
 from utils.queries import Queries
@@ -193,8 +195,8 @@ if wanted == "1":
 
 elif wanted == "2":
     migrates = {
-        "1": "Migrate data from v1 to v2 (not yet working)",
-        "2": "Update area_data from csv to json"
+        "1": "Migrate data from v1 (PMSFnestScript) to v2 (Nest Watcher)",
+        "2": "Update area_data from csv to json (legacy, for beta testers)"
     }
     wanted2 = list_options(migrates)
     if wanted2 == "2":
@@ -223,6 +225,75 @@ elif wanted == "2":
                 with open(area_file_name.replace(".csv", ".json"), "w+") as f:
                     f.write(json.dumps(area_file_data, indent=4))
         print("Done!")
+    elif wanted2 == "1":
+        print("This tool will copy your old default.ini values to the new format and convert the area data format.\nAttention: This WILL overwrite your current config with the options you set in PMSFnestScript")
+        confirm = ""
+        while confirm not in ["y", "n"]:
+            confirm = input("Do you want to continue? (y/n) ").lower()
+        if confirm == "n":
+            sys.exit()
+
+        print("Now write the whole path to your old PMSFnestScript (e.g. /root/PMSFnestScript/)")
+        path = input()
+
+        old_config = ConfigParser()
+        old_config.read(path + "default.ini")
+
+        new_config = ConfigParser()
+        new_config.read("config/config.ini")
+
+        new_config["Config"]["pokestop_pokemon"] = old_config.get("Nest Config", "POKESTOP_POKEMON")
+
+        new_config["Scanner DB"]["scanner"] = old_config.get("DB Read", "SCANNER_SCHEMA")
+        new_config["Scanner DB"]["name"] = old_config.get("DB Read", "NAME")
+        new_config["Scanner DB"]["password"] = old_config.get("DB Read", "PASSWORD")
+        new_config["Scanner DB"]["user"] = old_config.get("DB Read", "USER")
+        new_config["Scanner DB"]["host"] = old_config.get("DB Read", "HOST")
+        new_config["Scanner DB"]["port"] = old_config.get("DB Read", "PORT")
+
+        new_config["Nest DB"]["name"] = old_config.get("DB Write", "NAME")
+        new_config["Nest DB"]["password"] = old_config.get("DB Write", "PASSWORD")
+        new_config["Nest DB"]["user"] = old_config.get("DB Write", "USER")
+        new_config["Nest DB"]["host"] = old_config.get("DB Write", "HOST")
+        new_config["Nest DB"]["port"] = old_config.get("DB Write", "PORT")
+
+        new_config["Geojson"]["path"] = old_config.get("Geojson", "SAVE_PATH")
+        new_config["Geojson"]["default_park_name"] = old_config.get("Geojson", "DEFAULT_PARK_NAME")
+        new_config["Geojson"]["stroke"] = old_config.get("Geojson", "STROKE")
+        new_config["Geojson"]["stroke_width"] = old_config.get("Geojson", "STROKE-WIDTH")
+        new_config["Geojson"]["stroke_opacity"] = old_config.get("Geojson", "STROKE-OPACITY")
+        new_config["Geojson"]["fill"] = old_config.get("Geojson", "FILL")
+        new_config["Geojson"]["fill_opacity"] = old_config.get("Geojson", "FILL-OPACITY")
+
+        new_config["Discord"]["language"] = old_config.get("Discord", "LANGUAGE")
+
+        with open("config/config.ini", "w+") as configfile:
+            new_config.write(configfile)
+
+        path += "area_data/"
+
+        for area_file_name in os.listdir(path):
+            if not area_file_name.endswith(".csv"):
+                continue
+            area_file_data = {}
+            with open(path + area_file_name, mode="r", encoding="utf-8") as area_file:
+                dict_reader = csv.DictReader(
+                    area_file,
+                    quotechar='"',
+                    quoting=csv.QUOTE_MINIMAL,
+                )
+                for line in dict_reader:
+                    connect = []
+                    area_file_data[line["osm_id"]] = {
+                        "name": line["name"],
+                        "center": [float(line["center_lon"]), float(line["center_lat"])],
+                        "connect": []
+                    }
+                with open("data/area_data/" + area_file_name.replace(".csv", ".json"), "w+") as f:
+                    f.write(json.dumps(area_file_data, indent=4))
+        
+        print("Done. Go check if everything worked in config/config.ini and data/area_data")
+
 
 elif wanted == "3":
     areaname = input("Area: ")
