@@ -151,6 +151,10 @@ def analyze_nests(config, area, nest_mons, queries, reset_time, nodelete):
                 failed_nests["Not in Geofence"] += 1
                 continue
 
+            if park.id in double_ways:
+                failed_nests["Avoiding double nests"] += 1
+                continue
+
             pokestop_in = None
             stops = []
             if config.scanner == "rdm" and config.pokestop_pokemon:
@@ -197,9 +201,6 @@ def analyze_nests(config, area, nest_mons, queries, reset_time, nodelete):
                 continue
             if park.mon_ratio < area.settings['min_ratio']:
                 failed_nests["Average spawn ratio too low"] += 1
-                continue
-            if park.id in double_ways:
-                failed_nests["Avoiding double nests"] += 1
                 continue
 
             park.generate_details(area_file_data, failed_nests["Total Nests found"])

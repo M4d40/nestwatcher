@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 
 class Queries():
     def __init__(self, config):
+        self.config = config
         self.connection = pymysql.connect(
             host=config.db_host,
             user=config.db_user,
@@ -33,7 +34,7 @@ class Queries():
             WHERE ST_CONTAINS(ST_GEOMFROMTEXT('MULTIPOLYGON(({area}))'), point(lat, lon))
             """
             mon_select = """SELECT pokemon_id, COUNT(pokemon_id) AS count
-            FROM pokemon
+            FROM {pokemon}
             WHERE (
                 (
                     pokestop_id IN ({pokestops})
@@ -48,7 +49,7 @@ class Queries():
             ORDER BY count desc
             LIMIT 1"""
             most_mon = """SELECT pokemon_id, COUNT(pokemon_id) AS count
-            FROM pokemon
+            FROM {pokemon}
             WHERE (
                 pokemon_id IN {nest_mons}
                 AND
@@ -57,7 +58,7 @@ class Queries():
             ORDER BY count desc
             LIMIT 1"""
             all_mons = """SELECT pokemon_id, lat, lon
-            FROM pokemon
+            FROM {pokemon}
             WHERE (
                 pokemon_id IN {nest_mons}
                 AND
@@ -74,7 +75,7 @@ class Queries():
             WHERE ST_CONTAINS(ST_GEOMFROMTEXT('MULTIPOLYGON(({area}))'), point(latitude, longitude))
             """
             mon_select = """SELECT pokemon_id, COUNT(pokemon_id) AS count
-            FROM pokemon
+            FROM {pokemon}
             WHERE (
                 spawnpoint_id IN ({spawnpoints})
                 AND
@@ -85,7 +86,7 @@ class Queries():
             ORDER BY count desc
             LIMIT 1"""
             most_mon = """SELECT pokemon_id, COUNT(pokemon_id) AS count
-            FROM pokemon
+            FROM {pokemon}
             WHERE (
                 pokemon_id IN {nest_mons}
                 AND
@@ -94,7 +95,7 @@ class Queries():
             ORDER BY count desc
             LIMIT 1"""
             all_mons = """SELECT pokemon_id, latitude, longitude
-            FROM pokemon
+            FROM {pokemon}
             WHERE (
                 pokemon_id IN {nest_mons}
                 AND
@@ -148,7 +149,7 @@ class Queries():
         return self.cursor.fetchall()
     
     def mons(self, spawns, mons, time, pokestops=None):
-        query = self.queries["mons"].format(spawnpoints=spawns, nest_mons=mons, reset_time=time, pokestops=pokestops)
+        query = self.queries["mons"].format(spawnpoints=spawns, nest_mons=mons, reset_time=time, pokestops=pokestops, pokemon=self.config.custom_pokemon)
         if not pokestops is None:
             query = query.format(pokestops=pokestops)
 
@@ -156,12 +157,12 @@ class Queries():
         return self.cursor.fetchone()
     
     def all_mons(self, mons, time, fence):
-        query = self.queries["all_mons"].format(nest_mons=mons, reset_time=time, area=fence)
+        query = self.queries["all_mons"].format(nest_mons=mons, reset_time=time, area=fence, pokemon=self.config.custom_pokemon)
         self.cursor.execute(query)
         return self.cursor.fetchall()
 
     def most_mon(self, mons, time):
-        self.cursor.execute(self.queries["most_mon"].format(nest_mons=mons, reset_time=time))
+        self.cursor.execute(self.queries["most_mon"].format(nest_mons=mons, reset_time=time, pokemon=self.config.custom_pokemon))
         return self.cursor.fetchone()
 
     def nest_delete(self, area):

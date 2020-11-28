@@ -19,6 +19,7 @@ class Config:
         self.db_password = config_file.get("Scanner DB", "password")
         self.db_host = config_file.get("Scanner DB", "host")
         self.db_port = config_file.getint("Scanner DB", "port")
+        self.custom_pokemon = config_file.get("Scanner DB", "custom_pokemon_table", fallback="pokemon")
 
         self.nest_db_name = config_file.get("Nest DB", "name")
         self.nest_db_user = config_file.get("Nest DB", "user")
