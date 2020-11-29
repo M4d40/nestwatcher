@@ -23,7 +23,7 @@ def analyze_nests(config, area, nest_mons, queries, reset_time, nodelete):
     try:
         with open(osm_file_name, mode="r", encoding="utf-8") as osm_file:
             nest_json = json.load(osm_file)
-    except (IOError, OSError):
+    except:
         free_slot = False
         while not free_slot:
             r = requests.get("http://overpass-api.de/api/status").text
