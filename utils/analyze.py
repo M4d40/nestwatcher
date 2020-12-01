@@ -32,7 +32,7 @@ def analyze_nests(config, area, nest_mons, queries, reset_time, nodelete):
                 free_slot = True
             else:
                 if "Slot available after" in r:
-                    rate_seconds = int(r.split(", in ")[1].split(" seconds.")[0]) + 5
+                    rate_seconds = int(r.split(", in ")[1].split(" seconds.")[0]) + 15
                     log.warning(f"Overpass is rate-limiting you. Gonna have to wait {rate_seconds} seconds before continuing")
                     time.sleep(rate_seconds)
                 else:
