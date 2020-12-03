@@ -129,8 +129,8 @@ if config.use_events:
 # Getting nesting species
 
 #nesting_mons = requests.get("https://pogoapi.net/api/v1/nesting_pokemon.json").json().keys()
-nesting_mons = requests.get("https://raw.githubusercontent.com/ccev/pogoinfo/info/nests.json").json()
-nest_mons = [str(m) for m in nesting_mons if m not in event_mons]
+nesting_mons = [str(m) for m in requests.get("https://raw.githubusercontent.com/ccev/pogoinfo/info/nests.json").json()]
+nest_mons = [m for m in nesting_mons if m not in event_mons]
 log.info("Got all nesting species")
 log.debug(nest_mons)
 
