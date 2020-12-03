@@ -46,12 +46,17 @@ if config.auto_time:
         
         if event_end <= last_migration:
             continue
+
+        if event_start <= last_migration:
+            continue
         
         if event_end < local_time:
             td = local_time - event_end
+            last_migration = event_end
             log.info(f"Overwriting nest migration with the end time of {event['name']}")
         else:
             td = local_time - event_start
+            last_migration = event_start
             log.info(f"Overwriting nest migration with the start time of {event['name']}")
 
     days, seconds = td.days, td.seconds
