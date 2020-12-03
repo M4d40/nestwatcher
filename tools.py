@@ -14,7 +14,8 @@ from utils.queries import Queries
 tools = {
     "1": "Update area_data using Discord",
     "2": "Migrate data to a newer version",
-    "3": "Update area_data using up-to-date OSM data"
+    "3": "Update area_data using up-to-date OSM data",
+    "4": "Delete all Discord emotes"
 }
 
 print("What are you looking for?")
@@ -348,3 +349,29 @@ elif wanted == "3":
                 print(f"Got error {e}")
         else:
             continue
+
+elif wanted == "4":
+    print("This will delete all Servers the bot created to host emotes on. Continue?")
+    confirm = ""
+    while confirm.lower() not in ("y", "n"):
+        confirm = input("[y/n] ")
+    if confirm == "n":
+        sys.exit()
+
+    with open("data/emotes.json", "r") as f:
+        emotes = json.load(f) 
+
+    bot = discord.Client()
+    @bot.event
+    async def on_message(message):
+        for server_id in emotes.keys():
+            server = await bot.fetch_guild(server_id)
+            await server.delete()
+        await bot.logout()
+
+    bot.run(config.discord_token)
+
+    with open("data/emotes.json", "w") as f:
+        f.write("{}")
+
+    print("Done. Now re-run the analyzer to regenerate emotes")

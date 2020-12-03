@@ -10,7 +10,7 @@ async def get_emotes(bot, nesting_mons, config):
             emote_servers = json.load(f)
     except (IOError, OSError):
         emote_servers = {}
-        log.info("This seems to be your first run. Your bot will now create 2 servers and fill them with emotes, so prepare for some wait time.")
+        log.info("This seems to be your first run. Your bot will now create 1 server and fill it with emotes, so prepare for some wait time.")
     emotes = {}
     final_emotes = {}
     for server, data in emote_servers.items():
