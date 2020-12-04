@@ -1,4 +1,4 @@
-# Nest Script
+# Nest Watcher
 A Program to analyze nests in your area, save it to a database and send Discord notifications about them.
 
 ## Links
