@@ -1,6 +1,7 @@
 [{
     "title": "Nest report for {areaname}",
     "description": "{nest_entry}",
+    "timestamp": "{current_time}",
     "image": {
         "url": "{staticmap}"
     }
