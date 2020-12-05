@@ -1,6 +1,11 @@
 import requests
+import time
+import json
+import timeit
 
-def get_osm_data(bbox, date):
+from utils.logging import log
+
+def fetch_data(bbox, date):
     data = """
     [out:json]
     [date:"{date}"]
@@ -60,3 +65,36 @@ def get_osm_data(bbox, date):
         return r.json()
     except:
         return {"remark": r.content}
+
+def get_osm_data(bbox, date, osm_file_name):
+    got_data = False
+    while not got_data:
+        free_slot = False
+        while not free_slot:
+            r = requests.get("http://overpass-api.de/api/status").text
+            if "available now" in r:
+                free_slot = True
+            else:
+                if "Slot available after" in r:
+                    rate_seconds = int(r.split(", in ")[1].split(" seconds.")[0]) + 15
+                    log.warning(f"Overpass is rate-limiting you. Gonna have to wait {rate_seconds} seconds before continuing")
+                    time.sleep(rate_seconds)
+                else:
+                    log.warning("Had trouble finding out about your overpass status. Waiting 1 minute before trying again")
+                    time.sleep(60)
+
+        log.info("Getting OSM data. This will take ages if this is your first run.")
+        osm_time_start = timeit.default_timer()
+        nest_json = fetch_data(bbox, date)
+        osm_time_stop = timeit.default_timer()
+        seconds = round(osm_time_stop - osm_time_start, 1)
+        if len(nest_json.get("elements", [])) == 0:
+            log.error(f"Did not get any data from overpass in {seconds} seconds. This probably means that you were rate-limited by overpass. Sleeping 5 minutes and trying again.\nIf you want, you can share the below log entry in Discord")
+            log.error(nest_json.get("remark"))
+            time.sleep(60*5)
+        else:
+            got_data = True
+            with open(osm_file_name, mode='w', encoding="utf-8") as osm_file:
+                osm_file.write(json.dumps(nest_json, indent=4))
+            log.success(f"Done. Got all OSM data in {seconds} seconds and saved it.")
+    return nest_json

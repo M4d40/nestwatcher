@@ -15,7 +15,8 @@ tools = {
     "1": "Update area_data using Discord",
     "2": "Migrate data to a newer version",
     "3": "Update area_data using up-to-date OSM data",
-    "4": "Delete all Discord emotes"
+    "4": "Delete all Discord emotes",
+    "5": "Fetch OSM data for all areas"
 }
 
 print("What are you looking for?")
@@ -375,3 +376,15 @@ elif wanted == "4":
         f.write("{}")
 
     print("Done. Now re-run the analyzer to regenerate emotes")
+
+elif wanted == "5":
+    from utils.overpass import get_osm_data
+    from utils.analyze import osm_date
+    print("starting now")
+    with open("config/areas.json", "r") as area_file:
+        raw_areas = json.load(area_file)
+    for area in raw_areas:
+        area = Area(area)
+        file_name = f"data/osm_data/{area.name} {osm_date().replace(':', '')}.json"
+        nest_json = get_osm_data(area.bbox, osm_date(), file_name)
+    print("All done")

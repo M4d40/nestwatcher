@@ -7,6 +7,7 @@ import requests
 from rich.progress import Progress
 from shapely import geometry
 from shapely.ops import polylabel, cascaded_union
+from shapely.errors import TopologicalError
 from geojson import Feature
 from collections import defaultdict
 
@@ -14,10 +15,11 @@ from utils.logging import log
 from utils.overpass import get_osm_data
 from utils.area import WayPark, RelPark
 
-OSM_DATE = "2019-02-24T00:00:00Z"
+def osm_date():
+    return "2019-02-24T00:00:00Z"
 
 def analyze_nests(config, area, nest_mons, queries, reset_time, nodelete):
-
+    OSM_DATE = osm_date()
     # Getting OSM/overpass data
     
     osm_file_name = f"data/osm_data/{area.name} {OSM_DATE.replace(':', '')}.json"
@@ -25,32 +27,7 @@ def analyze_nests(config, area, nest_mons, queries, reset_time, nodelete):
         with open(osm_file_name, mode="r", encoding="utf-8") as osm_file:
             nest_json = json.load(osm_file)
     except:
-        free_slot = False
-        while not free_slot:
-            r = requests.get("http://overpass-api.de/api/status").text
-            if "available now" in r:
-                free_slot = True
-            else:
-                if "Slot available after" in r:
-                    rate_seconds = int(r.split(", in ")[1].split(" seconds.")[0]) + 15
-                    log.warning(f"Overpass is rate-limiting you. Gonna have to wait {rate_seconds} seconds before continuing")
-                    time.sleep(rate_seconds)
-                else:
-                    log.warning("Had trouble finding out about your overpass status. Waiting 1 minute before trying again")
-                    time.sleep(60)
-
-        log.info("Getting OSM data. This will take ages if this is your first run.")
-        osm_time_start = timeit.default_timer()
-        nest_json = get_osm_data(area.bbox, OSM_DATE)
-        osm_time_stop = timeit.default_timer()
-        seconds = round(osm_time_stop - osm_time_start, 1)
-        if len(nest_json.get("elements", [])) == 0:
-            log.error(f"Did not get any data from overpass in {seconds} seconds. Because of that, the script will now stop. Please try again in a few hours, since you were rate-limited by overpass. If this still doesn't help, try splitting up your area.")
-            log.error(nest_json.get("remark"))
-            sys.exit()
-        with open(osm_file_name, mode='w', encoding="utf-8") as osm_file:
-            osm_file.write(json.dumps(nest_json, indent=4))
-        log.success(f"Done. Got all OSM data in {seconds} seconds and saved it.")
+        nest_json = get_osm_data(area.bbox, OSM_DATE, osm_file_name)
 
     # Getting area data
 
@@ -204,7 +181,10 @@ def analyze_nests(config, area, nest_mons, queries, reset_time, nodelete):
                 failed_nests["Average spawn ratio too low"] += 1
                 continue
 
-            park.generate_details(area_file_data, failed_nests["Total Nests found"])
+            try:
+                park.generate_details(area_file_data, failed_nests["Total Nests found"])
+            except TopologicalError:
+                failed_nests["Geometry is not valid"] += 1
 
             # Insert Nest data to db
             insert_args = {

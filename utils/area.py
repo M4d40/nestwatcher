@@ -39,7 +39,7 @@ def get_zoom(ne, sw, width, height, tile_size):
     return min(lat_zoom, lon_zoom)
 
 class Area():
-    def __init__(self, area, settings):
+    def __init__(self, area, settings={}):
         self.name = area["name"]
         self.settings = settings
         self.nests = []
