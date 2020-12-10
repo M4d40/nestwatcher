@@ -4,6 +4,7 @@ import csv
 import json
 import sys
 import requests
+import re
 
 from configparser import ConfigParser
 
@@ -16,7 +17,8 @@ tools = {
     "2": "Migrate data to a newer version",
     "3": "Update area_data using up-to-date OSM data",
     "4": "Delete all Discord emotes",
-    "5": "Fetch OSM data for all areas"
+    "5": "Fetch OSM data for all areas",
+    "6": "Generate MAD Geofence of Parks in Database"
 }
 
 print("What are you looking for?")
@@ -388,3 +390,21 @@ elif wanted == "5":
         file_name = f"data/osm_data/{area.name} {osm_date().replace(':', '')}.json"
         nest_json = get_osm_data(area.bbox, osm_date(), file_name)
     print("All done")
+    
+elif wanted == "6":
+    queries = Queries(config)
+    queries.nest_cursor.execute("select name, polygon_path from nests order by name asc")
+    nests = queries.nest_cursor.fetchall()
+    res =[tuple(str(ele) for ele in sub) for sub in nests]
+    fence = ''
+    for park in res:
+        park_name = ("["+park[0]+"]\n")
+        rc = re.sub(',(?=(((?!\]).)*\[)|[^\[\]]*$)','\n',park[1])
+        rb = re.sub("[\[\]']+","",rc)
+        rs = re.sub(' +','',rb)
+        park_coords = rs.strip("[]")
+        fence += (park_name+park_coords+"\n")
+    print ("Nest Coords saved in current folder as mad_fence.txt")
+    with open(os.path.join('.','mad_fence.txt'), "w") as file1:
+        file1.write(fence)
+    file1.close()
