@@ -178,8 +178,10 @@ class Area():
             result = requests.post(static_map_raw, json=static_map_data)
             if "error" in result.text:
                 log.error(f"Error while generating Static Map:\n\n{static_map_raw}\n{result.text}\n")
-            static_map = config.static_url + f"staticmap/pregenerated/{result.text}"
-            requests.get(static_map)
+                static_map = ""
+            else:
+                static_map = config.static_url + f"staticmap/pregenerated/{result.text}"
+                requests.get(static_map)
 
         # Text gen + filtering
 
