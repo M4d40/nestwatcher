@@ -37,7 +37,7 @@ if config.auto_time:
     for event in events:
         if not event["type"] == "Event":
             continue
-        if event["start"] is None:
+        if not (event["start"]) or (not event["end"]):
             continue
         event_start = datetime.strptime(event["start"], "%Y-%m-%d %H:%M")
         if event_start > local_time:
