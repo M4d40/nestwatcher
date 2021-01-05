@@ -214,11 +214,11 @@ if len(discord_message_data) > 0:
                                 found = True
                                 break
                 if found:
+                    log.success(f"Found existing Nest message for {area.name} and editing it")
                     await message.edit(embed=embed)
-                    log.success(f"Found existing Nest message for {area.name} and edited it")
                 else:
+                    log.success(f"Sending a new Nest message for {area.name}")
                     await channel.send(embed=embed)
-                    log.success(f"Sent a new Nest message for {area.name}")
                 
                 """if len(emote_refs) > 0:
                     log.info("Deleting emotes again")
