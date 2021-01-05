@@ -202,29 +202,32 @@ if len(discord_message_data) > 0:
 
                         emote = await server.create_custom_emoji(name=emote_name, image=image)
                         emote_refs[mon_id] = emote.id"""
-                channel = await bot.fetch_channel(d)
-                found = False
-                embed_dict, _ = area.get_nest_text(config, emote_refs)
-                embed = discord.Embed().from_dict(embed_dict)
-                async for message in channel.history():
-                    if message.author == bot.user:
-                        embeds = message.embeds
-                        if len(embeds) > 0:
-                            if embeds[0].title == embed.title:
-                                found = True
-                                break
-                if found:
-                    log.success(f"Found existing Nest message for {area.name} and editing it")
-                    await message.edit(embed=embed)
-                else:
-                    log.success(f"Sending a new Nest message for {area.name}")
-                    await channel.send(embed=embed)
-                
-                """if len(emote_refs) > 0:
-                    log.info("Deleting emotes again")
-                    for emote_id in emote_refs.values():
-                        emote = await server.fetch_emoji(emote_id)
-                        await emote.delete()"""
+                try:
+                    channel = await bot.fetch_channel(d)
+                    found = False
+                    embed_dict, _ = area.get_nest_text(config, emote_refs)
+                    embed = discord.Embed().from_dict(embed_dict)
+                    async for message in channel.history():
+                        if message.author == bot.user:
+                            embeds = message.embeds
+                            if len(embeds) > 0:
+                                if embeds[0].title == embed.title:
+                                    found = True
+                                    break
+                    if found:
+                        log.success(f"Found existing Nest message for {area.name} and editing it")
+                        await message.edit(embed=embed)
+                    else:
+                        log.success(f"Sending a new Nest message for {area.name}")
+                        await channel.send(embed=embed)
+                    
+                    """if len(emote_refs) > 0:
+                        log.info("Deleting emotes again")
+                        for emote_id in emote_refs.values():
+                            emote = await server.fetch_emoji(emote_id)
+                            await emote.delete()"""
+                except Exception as e:
+                    log.exception(e)
         except Exception as e:
             log.exception(e)
         await bot.logout()
