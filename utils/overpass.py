@@ -89,7 +89,7 @@ def get_osm_data(bbox, date, osm_file_name):
         osm_time_stop = timeit.default_timer()
         seconds = round(osm_time_stop - osm_time_start, 1)
         if len(nest_json.get("elements", [])) == 0:
-            log.error(f"Did not get any data from overpass in {seconds} seconds. This probably means that you were rate-limited by overpass. Sleeping 5 minutes and trying again.\nIf you want, you can share the below log entry in Discord")
+            log.error(f"Overpass did not return any data in {seconds} seconds. This could have different causes. Check if your geofence doesn't have its lat/lon switched up. Sleeping 5 minutes and trying again.\nIf you want, you can share the below log entry in Discord")
             log.error(nest_json.get("remark"))
             time.sleep(60*5)
         else:
