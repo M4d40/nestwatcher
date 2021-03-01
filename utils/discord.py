@@ -32,6 +32,12 @@ async def get_emotes(bot, nesting_mons, config):
                 free_emotes = True
                 break
         if not free_emotes:
+            for guild in bot.guilds:
+                if guild.name == "Nest Emotes":
+                    if len(guild.emojis) < 50:
+                        free_emotes = True
+                        break
+        if not free_emotes:
             guild = await bot.create_guild("Nest Emotes")
             channel = await guild.create_text_channel("hello")
             invite = await channel.create_invite()
