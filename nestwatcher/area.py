@@ -9,7 +9,7 @@ from datetime import datetime
 from geojson import Feature
 from urllib.parse import quote_plus
 
-from utils.logging import log
+from nestwatcher.logging import log
 
 def get_zoom(ne, sw, width, height, tile_size):
     ne = [c * 1.06 for c in ne]

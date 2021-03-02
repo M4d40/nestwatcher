@@ -6,7 +6,7 @@ import time
 import sys
 import math
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from geojson import FeatureCollection, dumps
 
 from nestwatcher.area import Area
@@ -26,23 +26,26 @@ args = parser.parse_args()
 config_path = args.config
 config = Config(config_path)
 
+def timestr_to_datetime(time):
+    return datetime.strptime(time, "%Y-%m-%d %H:%M")
+
 # Auto migration time
+events = requests.get("https://raw.githubusercontent.com/ccev/pogoinfo/v2/active/events.json").json()
 if config.auto_time:
     last_migration_timestamp = requests.get("https://raw.githubusercontent.com/ccev/pogoinfo/info/last-nest-migration").text
     last_migration = datetime.fromtimestamp(int(last_migration_timestamp)) 
     td = datetime.utcnow() - last_migration
 
     local_time = datetime.now()
-    events = requests.get("https://raw.githubusercontent.com/ccev/pogoinfo/info/events/all.json").json()
     for event in events:
-        if not event["type"] == "Event":
+        if not event["type"] == "event":
             continue
         if not (event["start"]) or (not event["end"]):
             continue
-        event_start = datetime.strptime(event["start"], "%Y-%m-%d %H:%M")
+        event_start = timestr_to_datetime(event["start"])
         if event_start > local_time:
             continue
-        event_end = datetime.strptime(event["end"], "%Y-%m-%d %H:%M")
+        event_end = timestr_to_datetime(event["end"])
         
         if event_end <= last_migration:
             continue
@@ -61,7 +64,11 @@ if config.auto_time:
 
     days, seconds = td.days, td.seconds
     config.hours_since_change = math.floor(days * 24 + seconds / 3600)
+    if config.hours_since_change < 0:
+        config.hours_since_change = 1
     log.success(f"Hours since last migration: {config.hours_since_change}")
+else:
+    last_migration = datetime.now() - timedelta(hours=config.hours_since_change)
 
 if args.hours is not None:
     config.hours_since_change = int(args.hours)
@@ -111,20 +118,27 @@ for setting in settings:
 
 # Event Data
 
-event_mons = []
+event_mons = set()
 if config.use_events:
-    event = requests.get("https://raw.githubusercontent.com/ccev/pogoinfo/info/events/active.json").json()
-    if datetime.strptime(event["end"], "%Y-%m-%d %H:%M") > datetime.now():
-        log.success(f"Found ongoing event: {event['name']}")
-        log.debug(event)
-        for mon in event["details"]["spawns"]:
-            try:
-                event_mons.append(str(int(mon.split("_")[0])))
-            except:
-                pass
-        log.debug(f"event mons: {event_mons}")
-    else:
-        log.info("No ongoing event found")
+    events = requests.get("https://raw.githubusercontent.com/ccev/pogoinfo/v2/active/events.json").json()
+    for event in events:
+        if "season" in event["name"].lower():
+            continue
+        if not event["start"] or not event["end"]:
+            continue
+        if not event["type"] in ["event", "spotlight-hour", "community-day"]:
+            continue
+        start = timestr_to_datetime(event["start"])
+        end = timestr_to_datetime(event["end"])
+        if end < last_migration:
+            continue
+        if start > last_migration:
+            continue
+        log.info(f"found active event since last migration: {event['name']}")
+        mons = {m["id"] for m in event["spawns"]}
+        event_mons = event_mons.union(mons)
+    if len(event_mons) == 0:
+        log.info("Found no Event spawns since last migration")
 
 # Getting nesting species
 
