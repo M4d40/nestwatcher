@@ -32,6 +32,8 @@ wanted = list_options(tools)
 config = Config()
 
 if wanted == "1":
+    print("Would you like to only edit nests with your confgured default name? (y/n) ")
+    do_default = input()
     print("Okay, now put the name of the area you want the bot to go through. Then go to a channel the bot as access to and write 'start', then follow the instructions on Discord.\n\nPlease note that:\n - The bot needs Manage Messages Perms (you may also want to do it in a private channel)\n - You have a tileserver configured")
     areaname = input("Area: ")
     print("Starting the bot now. Please write 'start' and follow your bot's instructions.")
@@ -76,7 +78,11 @@ if wanted == "1":
                 areas = json.load(f)
                 area = Area([a for a in areas if a["name"] == areaname][0], None)
 
-            queries.nest_cursor.execute(f"select nest_id, name, lat, lon, polygon_path, polygon_type from nests WHERE ST_CONTAINS(ST_GEOMFROMTEXT('POLYGON({area.sql_fence})'), point(lat, lon)) order by pokemon_avg desc")
+            if do_default == "y":
+                name_where = f"and name = '{config.default_park_name}'"
+            else:
+                name_where = ""
+            queries.nest_cursor.execute(f"select nest_id, name, lat, lon, polygon_path, polygon_type from nests WHERE ST_CONTAINS(ST_GEOMFROMTEXT('POLYGON({area.sql_fence})'), point(lat, lon)) {name_where} order by pokemon_avg desc")
             nests = queries.nest_cursor.fetchall()
 
             file_name = f"data/area_data/{areaname}.json"
