@@ -9,12 +9,12 @@ import math
 from datetime import datetime
 from geojson import FeatureCollection, dumps
 
-from utils.area import Area
-from utils.analyze import analyze_nests
-from utils.config import Config
-from utils.logging import log
-from utils.queries import Queries
-from utils.discord import get_emotes
+from nestwatcher.area import Area
+from nestwatcher.analyze import analyze_nests
+from nestwatcher.config import Config
+from nestwatcher.logging import log
+from nestwatcher.queries import Queries
+from nestwatcher.discord import get_emotes
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-c", "--config", default="config/config.ini", help="Config file to use")

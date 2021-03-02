@@ -3,7 +3,7 @@ import time
 import json
 import timeit
 
-from utils.logging import log
+from nestwatcher.logging import log
 
 def fetch_data(bbox, date):
     data = """

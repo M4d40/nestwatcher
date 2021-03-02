@@ -2,7 +2,7 @@ import discord
 import requests
 import json
 
-from utils.logging import log
+from nestwatcher.logging import log
 
 async def get_emotes(bot, nesting_mons, config):
     try:

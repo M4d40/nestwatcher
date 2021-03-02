@@ -7,9 +7,9 @@ import requests
 
 from configparser import ConfigParser
 
-from utils.config import Config
-from utils.area import get_zoom, Area
-from utils.queries import Queries
+from nestwatcher.config import Config
+from nestwatcher.area import get_zoom, Area
+from nestwatcher.queries import Queries
 
 tools = {
     "1": "Update area_data using Discord",
@@ -378,8 +378,8 @@ elif wanted == "4":
     print("Done. Now re-run the analyzer to regenerate emotes")
 
 elif wanted == "5":
-    from utils.overpass import get_osm_data
-    from utils.analyze import osm_date
+    from nestwatcher.overpass import get_osm_data
+    from nestwatcher.analyze import osm_date
     print("starting now")
     with open("config/areas.json", "r") as area_file:
         raw_areas = json.load(area_file)

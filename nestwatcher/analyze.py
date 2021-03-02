@@ -11,9 +11,9 @@ from shapely.errors import TopologicalError
 from geojson import Feature
 from collections import defaultdict
 
-from utils.logging import log
-from utils.overpass import get_osm_data
-from utils.area import WayPark, RelPark
+from nestwatcher.logging import log
+from nestwatcher.overpass import get_osm_data
+from nestwatcher.area import WayPark, RelPark
 
 def osm_date():
     return "2019-02-24T00:00:00Z"
