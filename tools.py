@@ -365,15 +365,12 @@ elif wanted == "4":
     if confirm == "n":
         sys.exit()
 
-    with open("data/emotes.json", "r") as f:
-        emotes = json.load(f) 
-
     bot = discord.Client()
     @bot.event
-    async def on_message(message):
-        for server_id in emotes.keys():
-            server = await bot.fetch_guild(server_id)
-            await server.delete()
+    async def on_ready():
+        for guild in bot.guilds:
+            if guild.name == "Nest Emotes":
+                await guild.delete()
         await bot.logout()
 
     bot.run(config.discord_token)
