@@ -30,6 +30,7 @@ async def get_emotes(bot, nesting_mons, config):
             guild = await bot.fetch_guild(guild_id)
             if len(guild.emojis) < 50:
                 free_emotes = True
+                emote_servers[guild.id] = {}
                 break
         if not free_emotes:
             for guild in bot.guilds:
