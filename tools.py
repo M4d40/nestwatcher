@@ -375,9 +375,6 @@ elif wanted == "4":
 
     bot.run(config.discord_token)
 
-    with open("data/emotes.json", "w") as f:
-        f.write("{}")
-
     print("Done. Now re-run the analyzer to regenerate emotes")
 
 elif wanted == "5":
