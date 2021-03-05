@@ -189,8 +189,7 @@ for area in full_areas:
     d = area.settings["discord"]
     if isinstance(d, str):
         if "webhooks" in d:
-            embed_dict, entry_list = area.get_nest_text(config)
-            discord_webhook_data.append([embed_dict, entry_list, d, area])
+            discord_webhook_data.append([d, area])
     elif isinstance(d, int):
         discord_message_data.append([d, area])
 
@@ -201,23 +200,10 @@ if len(discord_message_data) > 0:
 
     @bot.event
     async def on_ready():
-        """for guild in bot.guilds:
-            if bot.user.id == guild.owner_id:
-                await guild.delete()   """  
         try:
             log.info("Connected to Discord. Generating Nest messages and sending them.")
             emote_refs = await get_emotes(bot, nesting_mons, config)
             for d, area in discord_message_data:
-                """if len(config.emote_server) > 0:
-                    log.info("Createing emotes")
-                    server = await bot.fetch_guild(config.emote_server)
-                    for mon_id in [nest.mon_id for nest in [area.nests for area in full_areas][0]]:
-                        emote_name = f"m{mon_id}"
-                        image_url = config.icon_repo + f"pokemon_icon_{str(mon_id).zfill(3)}_00.png"
-                        image = requests.get(image_url).content
-
-                        emote = await server.create_custom_emoji(name=emote_name, image=image)
-                        emote_refs[mon_id] = emote.id"""
                 try:
                     channel = await bot.fetch_channel(d)
                     found = False
@@ -236,12 +222,6 @@ if len(discord_message_data) > 0:
                     else:
                         log.success(f"Sending a new Nest message for {area.name}")
                         await channel.send(embed=embed)
-                    
-                    """if len(emote_refs) > 0:
-                        log.info("Deleting emotes again")
-                        for emote_id in emote_refs.values():
-                            emote = await server.fetch_emoji(emote_id)
-                            await emote.delete()"""
                 except Exception as e:
                     log.exception(e)
         except Exception as e:
@@ -253,9 +233,21 @@ if len(discord_message_data) > 0:
 if len(discord_webhook_data) > 0:
     log.info("Sending webhooks")
 
-    for embed_dict, entry_list, webhook_link, area in discord_webhook_data:
+    for webhook_link, area in discord_webhook_data:
         entry_list_2 = []
         entries = []
+
+        emote_refs = None
+        if config.discord_token:
+            bot = discord.Client()
+            @bot.event
+            async def on_ready():
+                bot.emote_refs = await get_emotes(bot, nesting_mons, config)
+                await bot.logout()
+            bot.run(config.discord_token)
+            emote_refs = bot.emote_refs
+
+        embed_dict, entry_list = area.get_nest_text(config, emote_refs)
 
         while len(entry_list) > 0:
             text = ""

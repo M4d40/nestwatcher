@@ -40,11 +40,16 @@ async def get_emotes(bot, nesting_mons, config):
                 free_guild = guild
 
         if not free_guild:
-            free_guild = await bot.create_guild("Nest Emotes")
-            channel = await guild.create_text_channel("hello")
-            invite = await channel.create_invite()
-            log.info(f"Created new emote server. Invite code: {invite.code}") 
-            guilds.append(free_guild)
+            try:
+                free_guild = await bot.create_guild("Nest Emotes")
+                channel = await guild.create_text_channel("hello")
+                invite = await channel.create_invite()
+                log.info(f"Created new emote server. Invite code: {invite.code}") 
+                guilds.append(free_guild)
+            except Exception as e:
+                log.error("Exception while trying to create a guild. Aborting")
+                log.exception(e)
+                return final_emotes
 
         image_url = config.icon_repo + f"pokemon_icon_{monid.zfill(3)}_00.png"
         image = requests.get(image_url).content
