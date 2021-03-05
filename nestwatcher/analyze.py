@@ -53,6 +53,9 @@ def analyze_nests(config, area, nest_mons, queries, reset_time, nodelete):
     if not nodelete:
         queries.nest_delete(area.sql_fence, str(reset_time))
 
+    if config.poracle:
+        poracle_data = []
+
     log.info(f"Got all relevant information. Searching for nests in {area.name} now")
 
     nodes = {}
@@ -207,6 +210,13 @@ def analyze_nests(config, area, nest_mons, queries, reset_time, nodelete):
             nests.append(park)
 
             queries.nest_insert(insert_args)
+
+            if config.poracle:
+                insert_args["reset_time"] = int(reset_time)
+                poracle_data.append({
+                    "type": "nest",
+                    "message": insert_args
+                })
     stop = timeit.default_timer()
     log.success(f"Done finding nests in {area.name} ({round(stop - start, 1)} seconds)")
     for k, v in failed_nests.items():
@@ -233,6 +243,10 @@ def analyze_nests(config, area, nest_mons, queries, reset_time, nodelete):
         area_file.write(json.dumps(new_area_data, indent=4))
 
         log.info("Saved area data")
+
+    if config.poracle:
+        requests.post(config.poracle, json=poracle_data)
+        log.info("Sent data to Poracle")
     log.success(f"All done with {area.name}\n")
 
     return nests

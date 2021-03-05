@@ -12,6 +12,7 @@ class Config:
         self.less_queries = config_file.getboolean("Config", "less_queries", fallback=False)
         self.pokestop_pokemon = config_file.getboolean("Config", "pokestop_pokemon")
         self.in_meganest = config_file.getboolean("Config", "i_scan_berlin", fallback=False)
+        self.poracle = config_file.get("Config", "poracle_endpoint", fallback=False)
         self.workers = 5
 
         self.scanner = config_file.get("Scanner DB", "scanner")
