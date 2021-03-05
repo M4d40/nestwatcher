@@ -105,7 +105,7 @@ class Queries():
             )
             """
 
-        nest_delete = "DELETE FROM nests where ST_CONTAINS(ST_GEOMFROMTEXT('POLYGON({area})'), point(lat, lon))"
+        nest_delete = "DELETE FROM nests where ST_CONTAINS(ST_GEOMFROMTEXT('POLYGON({area})'), point(lat, lon)) and updated < {reset_time}"
         nest_insert = """INSERT INTO nests (
             nest_id, name, lat, lon, pokemon_id, pokemon_form, type, pokemon_count, pokemon_avg, updated,
             pokemon_ratio, polygon_type, polygon_path)
@@ -165,8 +165,8 @@ class Queries():
         self.cursor.execute(self.queries["most_mon"].format(nest_mons=mons, reset_time=time, pokemon=self.config.custom_pokemon))
         return self.cursor.fetchone()
 
-    def nest_delete(self, area):
-        self.nest_cursor.execute(self.queries["nest_delete"].format(area=area))
+    def nest_delete(self, area, time):
+        self.nest_cursor.execute(self.queries["nest_delete"].format(area=area, reset_time=time))
 
     def nest_insert(self, args):
         self.nest_cursor.execute(self.queries["nest_insert"], args)

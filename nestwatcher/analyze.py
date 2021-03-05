@@ -51,7 +51,7 @@ def analyze_nests(config, area, nest_mons, queries, reset_time, nodelete):
         db_data = {}"""
     
     if not nodelete:
-        queries.nest_delete(area.sql_fence)
+        queries.nest_delete(area.sql_fence, str(reset_time))
 
     log.info(f"Got all relevant information. Searching for nests in {area.name} now")
 
