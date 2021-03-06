@@ -132,7 +132,7 @@ if config.use_events:
         end = timestr_to_datetime(event["end"])
         if end < last_migration:
             continue
-        if start > last_migration:
+        if start > datetime.now():
             continue
         log.info(f"found active event since last migration: {event['name']}")
         mons = {m["id"] for m in event["spawns"]}
