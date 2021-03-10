@@ -5,7 +5,7 @@ import math
 
 from shapely import geometry
 from shapely.ops import polylabel, linemerge, unary_union, polygonize
-from datetime import datetime
+from datetime import datetime, timedelta
 from geojson import Feature
 from urllib.parse import quote_plus
 
@@ -60,6 +60,9 @@ class Area():
         self.bbox = f"{bounds[1]},{bounds[0]},{bounds[3]},{bounds[2]}"
     
     def get_nest_text(self, config, emote_refs=None):
+        last_migration_timestamp = requests.get("https://raw.githubusercontent.com/ccev/pogoinfo/info/last-nest-migration").text
+        last_migration = datetime.fromtimestamp(int(last_migration_timestamp))
+        next_migration_date = last_migration + timedelta(days=14)
         with open(f"data/mon_names/{config.language}.json", "r") as f:
             mon_names = json.load(f)
         with open("config/discord.json", "r") as f:
@@ -193,7 +196,8 @@ class Area():
                         nest_entry=entries,
                         areaname=self.name,
                         staticmap=static_map,
-                        current_time=datetime.utcnow()
+                        current_time=datetime.utcnow(),
+                        next_migration=(str(next_migration_date.strftime('%m-%d-%y')))
                     )
                 elif isinstance(v, dict):
                     dic[k] = replace(v)
@@ -225,7 +229,7 @@ class Area():
                 park_name=nest.name,
                 lat=nest.lat,
                 lon=nest.lon,
-
+                
                 mon_id=nest.mon_id,
                 mon_avg=nest.mon_avg,
                 mon_count=nest.mon_count,
