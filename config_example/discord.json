@@ -1,5 +1,5 @@
 [{
-    "title": "Nest report for {areaname}",
+    "title": "Nest report for {areaname}, Next Migration: {next_migration}",
     "description": "{nest_entry}",
     "timestamp": "{current_time}",
     "image": {
