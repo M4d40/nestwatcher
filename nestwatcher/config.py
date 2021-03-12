@@ -10,6 +10,9 @@ class Config:
         self.use_events = config_file.getboolean("Config", "events", fallback=True)
         self.hemisphere = config_file.get("Config", "hemisphere", fallback="all")
         self.less_queries = config_file.getboolean("Config", "less_queries", fallback=False)
+        self.submitted_by = config_file.getboolean("Config", "bot_name", fallback=None)
+        if not self.submitted_by:
+            self.submitted_by = None
         self.pokestop_pokemon = config_file.getboolean("Config", "pokestop_pokemon")
         self.in_meganest = config_file.getboolean("Config", "i_scan_berlin", fallback=False)
         self.poracle = config_file.get("Config", "poracle_endpoint", fallback=False)

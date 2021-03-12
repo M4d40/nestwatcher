@@ -203,7 +203,8 @@ def analyze_nests(config, area, nest_mons, queries, reset_time, nodelete):
                 "pokemon_ratio": park.mon_ratio,
                 "poly_path": json.dumps(park.path),
                 "poly_type": 1 if isinstance(park, RelPark) else 0,
-                "current_time": int(time.time())
+                "current_time": int(time.time()),
+                "nest_submitted_by": config.submitted_by
             }
 
             failed_nests["Total Nests found"] += 1
