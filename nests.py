@@ -139,8 +139,8 @@ if config.use_events:
             continue
         if start > datetime.now():
             continue
-        log.info(f"found active event since last migration: {event['name']}")
-        mons = {m["id"] for m in event["spawns"]}
+        log.info(f"Found active event since last migration: {event['name']}")
+        mons = {str(m["id"]) for m in event["spawns"]}
         event_mons = event_mons.union(mons)
     if len(event_mons) == 0:
         log.info("Found no Event spawns since last migration")
