@@ -5,7 +5,7 @@ import math
 
 from shapely import geometry
 from shapely.ops import polylabel, linemerge, unary_union, polygonize
-from datetime import datetime
+from datetime import datetime, timedelta
 from geojson import Feature
 from urllib.parse import quote_plus
 
@@ -59,7 +59,7 @@ class Area():
         bounds = self.polygon.bounds
         self.bbox = f"{bounds[1]},{bounds[0]},{bounds[3]},{bounds[2]}"
     
-    def get_nest_text(self, config, emote_refs=None):
+    def get_nest_text(self, config, emote_refs, last_migration, time_format):
         with open(f"data/mon_names/{config.language}.json", "r") as f:
             mon_names = json.load(f)
         with open("config/discord.json", "r") as f:
@@ -183,6 +183,9 @@ class Area():
                 static_map = config.static_url + f"staticmap/pregenerated/{result.text}"
                 requests.get(static_map)
 
+        next_migration_timestamp = last_migration + timedelta(days=14)
+        next_migration = next_migration_timestamp.strftime(time_format)
+
         # Text gen + filtering
 
         def replace(dic):
@@ -193,7 +196,9 @@ class Area():
                         nest_entry=entries,
                         areaname=self.name,
                         staticmap=static_map,
-                        current_time=datetime.utcnow()
+                        current_time=datetime.utcnow(),
+                        next_migration_timestamp=next_migration_timestamp,
+                        next_migration=next_migration
                     )
                 elif isinstance(v, dict):
                     dic[k] = replace(v)

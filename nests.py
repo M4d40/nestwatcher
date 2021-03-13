@@ -31,10 +31,11 @@ def timestr_to_datetime(time):
 
 # Auto migration time
 events = requests.get("https://raw.githubusercontent.com/ccev/pogoinfo/v2/active/events.json").json()
+hours_since_migration = False
 if config.auto_time:
     last_migration_timestamp = requests.get("https://raw.githubusercontent.com/ccev/pogoinfo/info/last-nest-migration").text
-    last_migration = datetime.fromtimestamp(int(last_migration_timestamp)) 
-    td = datetime.utcnow() - last_migration
+    last_migration = datetime.fromtimestamp(int(last_migration_timestamp))
+    last_regular_migration = last_migration
 
     local_time = datetime.now()
     for event in events:
@@ -54,25 +55,21 @@ if config.auto_time:
             continue
         
         if event_end < local_time:
-            td = local_time - event_end
             last_migration = event_end
             log.info(f"Overwriting nest migration with the end time of {event['name']}")
         else:
-            td = local_time - event_start
             last_migration = event_start
             log.info(f"Overwriting nest migration with the start time of {event['name']}")
 
-    days, seconds = td.days, td.seconds
-    config.hours_since_change = math.floor(days * 24 + seconds / 3600)
-    if config.hours_since_change < 0:
-        config.hours_since_change = 1
-    log.success(f"Hours since last migration: {config.hours_since_change}")
+    log.success(f"Last migration: {last_migration}")
 else:
-    last_migration = datetime.now() - timedelta(hours=config.hours_since_change)
+    hours_since_migration = config.hours_since_change
 
 if args.hours is not None:
-    config.hours_since_change = int(args.hours)
+    hours_since_migration = int(args.hours)
     log.info(f"Overwriting hours since change with {config.hours_since_change}")
+if hours_since_migration:
+    last_migration = datetime.now() - timedelta(hours=hours_since_migration)
 if args.noevents:
     config.use_events = False
 
@@ -88,7 +85,7 @@ if args.area is not None:
         log.error("Couldn't find that area. Maybe check capitalization")
         sys.exit()
 
-reset_time = int(time.time()) - (config.hours_since_change*3600)
+reset_time = datetime.timestamp(last_migration)
 
 defaults = {
     "min_pokemon": 9,
@@ -207,7 +204,7 @@ if len(discord_message_data) > 0:
                 try:
                     channel = await bot.fetch_channel(d)
                     found = False
-                    embed_dict, _ = area.get_nest_text(config, emote_refs)
+                    embed_dict, _ = area.get_nest_text(config, emote_refs, last_regular_migration, config.time_format)
                     embed = discord.Embed().from_dict(embed_dict)
                     async for message in channel.history():
                         if message.author == bot.user:
@@ -247,7 +244,7 @@ if len(discord_webhook_data) > 0:
             bot.run(config.discord_token)
             emote_refs = bot.emote_refs
 
-        embed_dict, entry_list = area.get_nest_text(config, emote_refs)
+        embed_dict, entry_list = area.get_nest_text(config, emote_refs, last_regular_migration, config.time_format)
 
         while len(entry_list) > 0:
             text = ""
