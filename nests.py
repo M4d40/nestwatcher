@@ -69,7 +69,15 @@ if args.hours is not None:
     hours_since_migration = int(args.hours)
     log.info(f"Overwriting hours since change with {config.hours_since_change}")
 if hours_since_migration:
+    config.hours_since_change = hours_since_migration
     last_migration = datetime.now() - timedelta(hours=hours_since_migration)
+else:
+    # TODO: this is a hotfix so mon_avg doesnt break
+    td = datetime.now() - last_migration
+    days, seconds = td.days, td.seconds
+    config.hours_since_change = math.floor(days * 24 + seconds / 3600)
+    if config.hours_since_change < 0:
+        config.hours_since_change = 1
 if args.noevents:
     config.use_events = False
 
