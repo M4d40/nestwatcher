@@ -1,8 +1,8 @@
-from configparser import ConfigParser
+from configparser import RawConfigParser
 
 class Config:
     def __init__(self, config_path="config/config.ini"):
-        config_file = ConfigParser()
+        config_file = RawConfigParser()
         config_file.read(config_path)
 
         self.hours_since_change = 3
