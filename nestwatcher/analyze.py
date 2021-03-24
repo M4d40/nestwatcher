@@ -246,8 +246,8 @@ def analyze_nests(config, area, nest_mons, queries, reset_time, nodelete):
         log.info("Saved area data")
 
     if config.poracle:
-        requests.post(config.poracle, json=poracle_data)
-        log.info("Sent data to Poracle")
+        r = requests.post(config.poracle, json=poracle_data)
+        log.info(f"Sent data to Poracle with status code {r.status_code}")
     log.success(f"All done with {area.name}\n")
 
     return nests
