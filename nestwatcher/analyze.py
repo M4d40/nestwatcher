@@ -138,7 +138,7 @@ def analyze_nests(config, area, nest_mons, queries, reset_time, nodelete):
 
             pokestop_in = None
             stops = []
-            if config.scanner == "rdm" and config.pokestop_pokemon:
+            if config.pokestop_pokemon:
                 # Get all Pokestops with id, lat and lon
                 for pkstp in queries.stops(park.sql_fence):
                     stops.append(str(pkstp[0]))

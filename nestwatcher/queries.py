@@ -69,7 +69,9 @@ class Queries():
             """
 
         elif config.scanner == "mad":
-            pokestop_select = ""
+            pokestop_select = """SELECT pokestop_id, latitude, longitude
+            FROM pokestop
+            WHERE ST_CONTAINS(ST_GEOMFROMTEXT('MULTIPOLYGON(({area}))'), point(latitude, longitude))"""
             spawnpoint_select = """SELECT spawnpoint, latitude, longitude
             FROM trs_spawn
             WHERE ST_CONTAINS(ST_GEOMFROMTEXT('MULTIPOLYGON(({area}))'), point(latitude, longitude))
@@ -77,7 +79,11 @@ class Queries():
             mon_select = """SELECT pokemon_id, COUNT(pokemon_id) AS count
             FROM {pokemon}
             WHERE (
-                spawnpoint_id IN ({spawnpoints})
+                (
+                    fort_id IN ({pokestops})
+                    OR
+                    spawnpoint IN ({spawnpoints})
+                )
                 AND
                 pokemon_id IN {nest_mons}
                 AND
