@@ -31,6 +31,7 @@ def fetch_data(bbox, date):
         way[landuse=orchard];
         way[natural=plateau];
         way[natural=moor];
+        way["leisure"="nature_reserve"];
         
         rel[leisure=park];
         rel[landuse=recreation_ground];
@@ -51,6 +52,7 @@ def fetch_data(bbox, date):
         rel[landuse=orchard];
         rel[natural=plateau];
         rel[natural=moor];
+        rel["leisure"="nature_reserve"];
     );
     out body;
     >;
