@@ -80,7 +80,7 @@ class Queries():
             FROM {pokemon}
             WHERE (
                 (
-                    fort_id IN ({pokestops})
+                    gym_id IN ({pokestops})
                     OR
                     spawnpoint IN ({spawnpoints})
                 )
