@@ -80,7 +80,7 @@ class Queries():
             FROM {pokemon}
             WHERE (
                 (
-                    spawnpoint IN ({spawnpoints})
+                    spawnpoint_id IN ({spawnpoints})
                 )
                 AND
                 pokemon_id IN {nest_mons}
