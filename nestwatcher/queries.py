@@ -1,6 +1,6 @@
 import pymysql
 
-from datetime import datetime, timedelta 
+from datetime import datetime, timedelta
 
 class Queries():
     def __init__(self, config):
@@ -151,7 +151,7 @@ class Queries():
         #print(query + "\n\n")
         self.cursor.execute(query)
         return self.cursor.fetchall()
-    
+
     def mons(self, spawns, mons, time, pokestops=None):
         query = self.queries["mons"].format(spawnpoints=spawns, nest_mons=mons, reset_time=time, pokestops=pokestops, pokemon=self.config.custom_pokemon)
         if not pokestops is None:
@@ -159,7 +159,7 @@ class Queries():
 
         self.cursor.execute(query)
         return self.cursor.fetchone()
-    
+
     def all_mons(self, mons, time, fence):
         query = self.queries["all_mons"].format(nest_mons=mons, reset_time=time, area=fence, pokemon=self.config.custom_pokemon)
         self.cursor.execute(query)

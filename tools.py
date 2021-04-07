@@ -68,7 +68,7 @@ if wanted == "1":
         except:
             print("Error while trying to check the start reaction")
         else:
-            
+
             await message.clear_reactions()
 
             for emote in controls.keys():
@@ -99,7 +99,7 @@ if wanted == "1":
                 g_link = f"https://www.google.com/maps?q={lat},{lon}"
                 description = get_desc(name, lat, lon, osm_link, g_link)
 
-                if len(config.static_url) > 0:     
+                if len(config.staticpregen_url) > 0:
                     lats = []
                     lons = []
                     for poly in poly_path:
@@ -137,16 +137,16 @@ if wanted == "1":
                         })
                     #print(json.dumps(static_map_data,indent=4))
 
-                    result = requests.post(config.static_url + "staticmap?pregenerate=true", json=static_map_data)
+                    result = requests.post(config.staticpregen_url + "staticmap?pregenerate=true", json=static_map_data)
                     if "error" in result.text:
                         print(f"Error while generating Static Map:\n\n{static_map_data}\n{result.text}\n")
                         static_map_data["polygons"] = []
-                        result = requests.post(config.static_url + "staticmap?pregenerate=true", json=static_map_data)
-                    static_map = config.static_url + f"staticmap/pregenerated/{result.text}"
+                        result = requests.post(config.staticpregen_url + "staticmap?pregenerate=true", json=static_map_data)
+                    static_map = config.staticpregen_url + f"staticmap/pregenerated/{result.text}"
                     requests.get(static_map)
                 else:
                     static_map = ""
-                
+
                 embed = discord.Embed(description=description)
                 embed.set_image(url=static_map)
                 embed.set_footer(text=f"Page {i}/{len(nests)}")
@@ -161,7 +161,7 @@ if wanted == "1":
                         reaction, _ = await bot.wait_for("reaction_add", check=check, timeout=60*60*24)
                     except:
                         print("Error while trying to check a reaction")
-                    else:     
+                    else:
                         control = controls[str(reaction.emoji)]
                         if control == "name":
                             m = await bot.wait_for("message", check=m_check)
@@ -299,7 +299,7 @@ elif wanted == "2":
                     }
                 with open("data/area_data/" + area_file_name.replace(".csv", ".json"), "w+") as f:
                     f.write(json.dumps(area_file_data, indent=4))
-        
+
         print("Done. Go check if everything worked in config/config.ini and data/area_data")
 
 
@@ -323,7 +323,7 @@ elif wanted == "3":
     for name, nestid, nesttype in nests:
         way = "way" if nesttype == 0 else "rel"
         query += f"{way}({nestid});"
-    
+
     data = f"[out:json];({query});out body;>;out skel qt;"
     r = requests.post("http://overpass-api.de/api/interpreter", data=data)
 
@@ -341,12 +341,12 @@ elif wanted == "3":
             continue
         if new_name == name:
             continue
-    
+
         print(f"[{nestid}] {name} -> {new_name}")
         confirm = ""
         while confirm.lower() not in ("y", "n"):
             confirm = input("y/n ")
-        
+
         if confirm.lower() == "y":
             try:
                 area_data[str(nestid)]["name"] = name

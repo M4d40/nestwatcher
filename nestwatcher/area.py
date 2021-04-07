@@ -28,7 +28,7 @@ def get_zoom(ne, sw, width, height, tile_size):
 
     lat_fraction = (latRad(ne[0]) - latRad(sw[0])) / math.pi
 
-    angle = ne[1] - sw[1] 
+    angle = ne[1] - sw[1]
     if angle < 0:
         angle += 360
     lon_fraction = angle / 360
@@ -52,13 +52,13 @@ class Area():
             polygon_.append((lon, lat))
             sql_fence.append(f"{lat} {lon}")
         sql_fence.append(f"{fence[0][0]} {fence[0][1]}")
-        
+
         self.polygon = geometry.Polygon(polygon_)
         self.sql_fence = "(" + ",".join(sql_fence) + ")"
 
         bounds = self.polygon.bounds
         self.bbox = f"{bounds[1]},{bounds[0]},{bounds[3]},{bounds[2]}"
-    
+
     def get_nest_text(self, config, emote_refs, last_migration, time_format):
         with open(f"data/mon_names/{config.language}.json", "r") as f:
             mon_names = json.load(f)
@@ -167,20 +167,20 @@ class Area():
             center_lon = minlon + ((maxlon - minlon) / 2)
             def parse(var):
                 return quote_plus(json.dumps(var)).replace('+','')
-            
+
             static_map_data = {
                 "lat": center_lat,
                 "lon": center_lon,
                 "zoom": zoom,
                 "nestjson": markers
             }
-            static_map_raw = config.static_url + "staticmap/nests?pregenerate=true&regeneratable=true"
+            static_map_raw = config.staticpregen_url + "staticmap/nests?pregenerate=true&regeneratable=true"
             result = requests.post(static_map_raw, json=static_map_data)
             if "error" in result.text:
                 log.error(f"Error while generating Static Map:\n\n{static_map_raw}\n{result.text}\n")
                 static_map = ""
             else:
-                static_map = config.static_url + f"staticmap/pregenerated/{result.text}"
+                static_map = config.staticpregen_url + f"staticmap/pregenerated/{result.text}"
                 requests.get(static_map)
 
         next_migration_timestamp = last_migration + timedelta(days=14)
@@ -324,7 +324,7 @@ class Park():
 class WayPark(Park):
     def __init__(self, element, config):
         super().__init__(element, config)
-    
+
     def get_polygon(self, nodes):
         way_points = list()
         for point in self._element['nodes']:
@@ -353,7 +353,7 @@ class RelPark(Park):
         for member in self._element["members"]:
             if member["type"] == "node":
                 continue
-            
+
             way = [w for w in ways if w.id == member["ref"]]
             if way == []:
                 continue

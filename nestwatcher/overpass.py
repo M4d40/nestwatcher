@@ -32,7 +32,7 @@ def fetch_data(bbox, date):
         way[natural=plateau];
         way[natural=moor];
         way["leisure"="nature_reserve"];
-        
+
         rel[leisure=park];
         rel[landuse=recreation_ground];
         rel[leisure=recreation_ground];

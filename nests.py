@@ -47,13 +47,13 @@ if config.auto_time:
         if event_start > local_time:
             continue
         event_end = timestr_to_datetime(event["end"])
-        
+
         if event_end <= last_migration:
             continue
 
         if event_start <= last_migration:
             continue
-        
+
         if event_end < local_time:
             last_migration = event_end
             log.info(f"Overwriting nest migration with the end time of {event['name']}")
@@ -185,7 +185,7 @@ queries.close()
 # Discord stuff
 
 discord_webhook_data = []
-discord_message_data = []     
+discord_message_data = []
 
 for area in full_areas:
     if len(area.nests) == 0:
@@ -279,7 +279,7 @@ if len(discord_webhook_data) > 0:
             for key in keys:
                 if key in embed_dict.keys():
                     embed[key] = embed_dict[key]
-        
+
             r = requests.post(webhook_link, json={"embeds": [embed]})
             log.success(f"Sent Webhook for {area.name} ({r.status_code})")
             time.sleep(1)
