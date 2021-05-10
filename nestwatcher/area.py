@@ -5,6 +5,7 @@ import math
 
 from shapely import geometry
 from shapely.ops import polylabel, linemerge, unary_union, polygonize
+from shapely.errors import TopologicalError
 from datetime import datetime, timedelta
 from geojson import Feature
 from urllib.parse import quote_plus
@@ -383,8 +384,11 @@ class RelPark(Park):
         inner_polygon = geometry.MultiPolygon(get_polys(inner_members))
         final_polygon = None
         if outer_polygon and inner_polygon:
-            final_polygon = outer_polygon.symmetric_difference(
-                inner_polygon).difference(inner_polygon)
+            try:
+                final_polygon = outer_polygon.symmetric_difference(
+                    inner_polygon).difference(inner_polygon)
+            except TopologicalError:
+                final_polygon = outer_polygon
         elif outer_polygon:
             final_polygon = outer_polygon
         elif inner_polygon:
