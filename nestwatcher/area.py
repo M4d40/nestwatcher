@@ -61,7 +61,7 @@ class Area():
         self.bbox = f"{bounds[1]},{bounds[0]},{bounds[3]},{bounds[2]}"
     
     def get_nest_text(self, config, emote_refs, last_migration, time_format):
-        with open(f"data/mon_names/{config.language}.json", "r") as f:
+        with open(f"data/mon_names/{config.language}.json", "r", encoding="utf-8") as f:
             mon_names = json.load(f)
         with open("config/discord.json", "r") as f:
             template = json.load(f)
