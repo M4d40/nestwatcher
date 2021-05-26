@@ -45,6 +45,6 @@ class Config:
         self.discord_token = config_file.get("Discord", "token")
         self.language = config_file.get("Discord", "language")
         self.static_url = config_file.get("Discord", "tileserver_url")
-        self.staticpregen_url = config_file.get("Discord", "tileserverpregen_url")
+        self.staticpregen_url = config_file.get("Discord", "tileserverpregen_url") ? config_file.get("Discord", "tileserverpregen_url") : config_file.get("Discord", "tileserver_url")
         self.icon_repo = config_file.get("Discord", "icon_repo")
         self.time_format = config_file.get("Discord", "time_format", fallback="%d.%m. %H:%M")
