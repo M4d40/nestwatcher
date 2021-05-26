@@ -1,6 +1,7 @@
 # ignore existing OSM files
 OSM_DATA_*.json
 default.ini
+.idea
 
 
 # Ignore the data folders

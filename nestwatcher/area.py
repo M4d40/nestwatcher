@@ -5,6 +5,7 @@ import math
 
 from shapely import geometry
 from shapely.ops import polylabel, linemerge, unary_union, polygonize
+from shapely.errors import TopologicalError
 from datetime import datetime, timedelta
 from geojson import Feature
 from urllib.parse import quote_plus
@@ -60,7 +61,7 @@ class Area():
         self.bbox = f"{bounds[1]},{bounds[0]},{bounds[3]},{bounds[2]}"
 
     def get_nest_text(self, config, emote_refs, last_migration, time_format):
-        with open(f"data/mon_names/{config.language}.json", "r") as f:
+        with open(f"data/mon_names/{config.language}.json", "r", encoding="utf-8") as f:
             mon_names = json.load(f)
         with open("config/discord.json", "r") as f:
             template = json.load(f)
@@ -383,8 +384,11 @@ class RelPark(Park):
         inner_polygon = geometry.MultiPolygon(get_polys(inner_members))
         final_polygon = None
         if outer_polygon and inner_polygon:
-            final_polygon = outer_polygon.symmetric_difference(
-                inner_polygon).difference(inner_polygon)
+            try:
+                final_polygon = outer_polygon.symmetric_difference(
+                    inner_polygon).difference(inner_polygon)
+            except TopologicalError:
+                final_polygon = outer_polygon
         elif outer_polygon:
             final_polygon = outer_polygon
         elif inner_polygon:

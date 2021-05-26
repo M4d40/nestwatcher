@@ -76,7 +76,7 @@ else:
     td = datetime.now() - last_migration
     days, seconds = td.days, td.seconds
     config.hours_since_change = math.floor(days * 24 + seconds / 3600)
-    if config.hours_since_change < 0:
+    if config.hours_since_change <= 0:
         config.hours_since_change = 1
 if args.noevents:
     config.use_events = False
