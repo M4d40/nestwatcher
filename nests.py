@@ -64,6 +64,7 @@ if config.auto_time:
     log.success(f"Last migration: {last_migration}")
 else:
     hours_since_migration = config.hours_since_change
+    last_regular_migration = None
 
 if args.hours is not None:
     hours_since_migration = int(args.hours)
