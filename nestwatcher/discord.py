@@ -42,7 +42,7 @@ async def get_emotes(bot, nesting_mons, config):
         if not free_guild:
             try:
                 free_guild = await bot.create_guild("Nest Emotes")
-                channel = await guild.create_text_channel("hello")
+                channel = await free_guild.create_text_channel("hello")
                 invite = await channel.create_invite()
                 log.info(f"Created new emote server. Invite code: {invite.code}") 
                 guilds.append(free_guild)
