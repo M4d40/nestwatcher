@@ -53,7 +53,7 @@ async def get_emotes(bot, nesting_mons, config):
 
         image_url = config.icon_repo + f"pokemon_icon_{monid.zfill(3)}_00.png"
         image = requests.get(image_url).content
-        emoji = await guild.create_custom_emoji(name=emote_name, image=image)
+        emoji = await free_guild.create_custom_emoji(name=emote_name, image=image)
         log.info(f"Created emoji {emote_name}")
 
         final_emotes[int(monid)] = emoji.id
