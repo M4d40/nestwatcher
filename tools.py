@@ -313,7 +313,6 @@ elif wanted == "3":
     with open(file_name, "r") as f:
         area_data = json.load(f)
 
-
     print("Fetching data now. This may take a while")
     queries = Queries(config)
     queries.nest_cursor.execute(f"select name, nest_id, polygon_type from nests WHERE ST_CONTAINS(ST_GEOMFROMTEXT('POLYGON({area.sql_fence})'), point(lat, lon)) order by pokemon_avg desc;")
@@ -349,12 +348,14 @@ elif wanted == "3":
         
         if confirm.lower() == "y":
             try:
-                area_data[str(nestid)]["name"] = name
+                area_data[str(nestid)]["name"] = new_name
                 with open(file_name, "w") as f:
                     f.write(json.dumps(area_data, indent=4))
+                print("Saved.")
             except Exception as e:
                 print(f"Got error {e}")
         else:
+            print("Skipped.")
             continue
 
 elif wanted == "4":
