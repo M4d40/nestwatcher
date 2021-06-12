@@ -255,6 +255,7 @@ if len(discord_webhook_data) > 0:
 
         embed_dict, entry_list = area.get_nest_text(config, emote_refs, last_regular_migration, config.time_format)
 
+        text = ""
         while len(entry_list) > 0:
             text = ""
             for entry in entry_list:
@@ -264,9 +265,8 @@ if len(discord_webhook_data) > 0:
                 text += entry
                 entry_list_2.append(entry)
             entry_list = [e for e in entry_list if e not in entry_list_2]
-        if text not in entries:
+        if text and text not in entries:
             entries.append(text)
-
 
         for i, entry in enumerate(entries):
             embed = {
