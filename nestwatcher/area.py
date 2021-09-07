@@ -96,9 +96,8 @@ class Area():
         type_data_raw = requests.get("https://pogoapi.net/api/v1/pokemon_types.json").json()
 
         type_data = {}
-        for data in type_data_raw:
-            if data.get("form", "").lower() == "normal":
-                type_data[int(data.get("pokemon_id", 0))] = data.get("type", [])
+        for data in reversed(type_data_raw):
+            type_data[int(data.get("pokemon_id", 0))] = data.get("type", [])
 
         filters = template[1]
         entries = ""
