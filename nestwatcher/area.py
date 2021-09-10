@@ -179,11 +179,11 @@ class Area():
             if "error" in result.text:
                 log.error(f"Error while generating Static Map:\n\n{static_map_raw}\n{result.text}\n")
                 static_map = ""
-            elif "http" in result.text:
-                static_map = result.text
-                requests.get(static_map)
             else:
-                static_map = config.static_url + f"staticmap/pregenerated/{result.text}"
+                if "http" in result.text:
+                    static_map = result.text
+                else:
+                    static_map = config.static_url + f"staticmap/pregenerated/{result.text}"
                 requests.get(static_map)
 
         next_migration_timestamp = last_migration + timedelta(days=14)
