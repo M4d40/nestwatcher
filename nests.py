@@ -51,7 +51,7 @@ if config.auto_time:
         if event_end <= last_migration:
             continue
 
-        if event_start <= last_migration:
+        if (event_start <= last_migration) and (event_end > local_time):
             continue
         
         if event_end < local_time:
