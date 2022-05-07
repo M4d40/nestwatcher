@@ -62,7 +62,7 @@ def fetch_data(bbox, date):
 
     data = data.format(bbox=bbox, date=date)
 
-    r = requests.post("http://overpass-api.de/api/interpreter", data=data)
+    r = requests.post("https://overpass.kumi.systems/api/interpreter", data=data)
     try:
         return r.json()
     except:
