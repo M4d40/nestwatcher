@@ -399,7 +399,7 @@ class RelPark(Park):
         self.polygon = final_polygon
 
         if isinstance(self.polygon, geometry.MultiPolygon):
-            polygons = list(self.polygon)
+            polygons = list(self.polygon.geoms)
         else:
             polygons = [self.polygon]
 

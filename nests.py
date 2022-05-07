@@ -184,9 +184,8 @@ with open(config.json_path, "w+") as file_:
 queries.close()
 
 # Discord stuff
-
 discord_webhook_data = []
-discord_message_data = []     
+discord_message_data = []
 
 for area in full_areas:
     if len(area.nests) == 0:
@@ -232,7 +231,7 @@ if len(discord_message_data) > 0:
                     log.exception(e)
         except Exception as e:
             log.exception(e)
-        await bot.logout()
+        await bot.close()
 
     bot.run(config.discord_token)
 
@@ -249,7 +248,7 @@ if len(discord_webhook_data) > 0:
             @bot.event
             async def on_ready():
                 bot.emote_refs = await get_emotes(bot, nesting_mons, config)
-                await bot.logout()
+                await bot.close()
             bot.run(config.discord_token)
             emote_refs = bot.emote_refs
 
@@ -284,6 +283,5 @@ if len(discord_webhook_data) > 0:
             r = requests.post(webhook_link, json={"embeds": [embed]})
             log.success(f"Sent Webhook for {area.name} ({r.status_code})")
             time.sleep(1)
-
 
 log.success("All done.")
