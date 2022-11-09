@@ -6,7 +6,7 @@ import requests
 
 from rich.progress import Progress
 from shapely import geometry
-from shapely.ops import polylabel, cascaded_union
+from shapely.ops import polylabel, unary_union
 from shapely.errors import TopologicalError
 from geojson import Feature
 from collections import defaultdict
@@ -88,7 +88,7 @@ def analyze_nests(config, area, nest_mons, queries, reset_time, nodelete):
 
     start = timeit.default_timer()
 
-    if config.less_queries:
+    if config.less_queries or config.custom_pokemon == "pokemon_history":
         log.info("Getting DB data")
         all_spawns = [(str(_id), geometry.Point(lon, lat)) for _id, lat, lon in queries.spawns(area.sql_fence)]
         all_mons = queries.all_mons(str(tuple(nest_mons)), str(reset_time), area.sql_fence)
@@ -114,7 +114,7 @@ def analyze_nests(config, area, nest_mons, queries, reset_time, nodelete):
                         small_park_i = i
 
                 parks[big_park_i].connect.append(connect_id)
-                parks[big_park_i].polygon = cascaded_union([big_park.polygon, small_park.polygon])
+                parks[big_park_i].polygon = unary_union([big_park.polygon, small_park.polygon])
                 parks.pop(small_park_i)
 
         # NOW CHECK ALL AREAS ONE AFTER ANOTHER
@@ -138,13 +138,13 @@ def analyze_nests(config, area, nest_mons, queries, reset_time, nodelete):
 
             pokestop_in = None
             stops = []
-            if config.pokestop_pokemon:
+            if config.pokestop_pokemon and not config.custom_pokemon == "pokemon_history":
                 # Get all Pokestops with id, lat and lon
                 for pkstp in queries.stops(park.sql_fence):
                     stops.append(str(pkstp[0]))
                 pokestop_in = "'{}'".format("','".join(stops))
 
-            if config.less_queries:
+            if config.less_queries or config.custom_pokemon == "pokemon_history":
                 spawns = [s[0] for s in all_spawns if park.polygon.contains(s[1])]
             else:
                 spawns = [str(s[0]) for s in queries.spawns(park.sql_fence)]
@@ -158,7 +158,7 @@ def analyze_nests(config, area, nest_mons, queries, reset_time, nodelete):
             spawnpoint_in = "'{}'".format("','".join(spawns))
             if spawnpoint_in == "''": spawnpoint_in = "NULL" # This will handle the SQL warning since a blank string shouldn't be used for a number
 
-            if config.less_queries:
+            if config.less_queries or config.custom_pokemon == "pokemon_history":
                 mons = [s[0] for s in all_mons if park.polygon.contains(s[1])]
                 if len(mons) == 0:
                     failed_nests["No Pokemon"] += 1
