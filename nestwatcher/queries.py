@@ -33,40 +33,76 @@ class Queries():
             FROM spawnpoint
             WHERE ST_CONTAINS(ST_GEOMFROMTEXT('MULTIPOLYGON(({area}))'), point(lat, lon))
             """
-            mon_select = """SELECT pokemon_id, COUNT(pokemon_id) AS count
-            FROM {pokemon}
-            WHERE (
-                (
-                    pokestop_id IN ({pokestops})
-                    OR
-                    spawn_id IN ({spawnpoints})
+            if config.custom_pokemon == "pokemon_history":
+                mon_select = """SELECT pokemon_id, COUNT(pokemon_id) AS count
+                FROM {pokemon}
+                WHERE (
+                    (
+                        pokestop_id IN ({pokestops})
+                        OR
+                        spawn_id IN ({spawnpoints})
+                    )
+                    AND
+                    pokemon_id IN {nest_mons}
+                    AND
+                    first_encounter >= {reset_time})
+                GROUP BY pokemon_id
+                ORDER BY count desc
+                LIMIT 1"""
+                most_mon = """SELECT pokemon_id, COUNT(pokemon_id) AS count
+                FROM {pokemon}
+                WHERE (
+                    pokemon_id IN {nest_mons}
+                    AND
+                    first_encounter >= {reset_time})
+                GROUP BY pokemon_id
+                ORDER BY count desc
+                LIMIT 1"""
+                all_mons = """SELECT pokemon_id, ST_X(location) as 'lat', ST_Y(location) as 'lon'
+                FROM {pokemon}
+                WHERE (
+                    pokemon_id IN {nest_mons}
+                    AND
+                    ST_CONTAINS(ST_GEOMFROMTEXT('POLYGON({area})'), location)
+                    AND
+                    first_encounter >= {reset_time}
                 )
-                AND
-                pokemon_id IN {nest_mons}
-                AND
-                first_seen_timestamp >= {reset_time})
-            GROUP BY pokemon_id
-            ORDER BY count desc
-            LIMIT 1"""
-            most_mon = """SELECT pokemon_id, COUNT(pokemon_id) AS count
-            FROM {pokemon}
-            WHERE (
-                pokemon_id IN {nest_mons}
-                AND
-                first_seen_timestamp >= {reset_time})
-            GROUP BY pokemon_id
-            ORDER BY count desc
-            LIMIT 1"""
-            all_mons = """SELECT pokemon_id, lat, lon
-            FROM {pokemon}
-            WHERE (
-                pokemon_id IN {nest_mons}
-                AND
-                ST_CONTAINS(ST_GEOMFROMTEXT('POLYGON({area})'), point(lat, lon))
-                AND
-                first_seen_timestamp >= {reset_time}
-            )
-            """
+                """
+            else:
+                mon_select = """SELECT pokemon_id, COUNT(pokemon_id) AS count
+                FROM {pokemon}
+                WHERE (
+                    (
+                        pokestop_id IN ({pokestops})
+                        OR
+                        spawn_id IN ({spawnpoints})
+                    )
+                    AND
+                    pokemon_id IN {nest_mons}
+                    AND
+                    first_seen_timestamp >= {reset_time})
+                GROUP BY pokemon_id
+                ORDER BY count desc
+                LIMIT 1"""
+                most_mon = """SELECT pokemon_id, COUNT(pokemon_id) AS count
+                FROM {pokemon}
+                WHERE (
+                    pokemon_id IN {nest_mons}
+                    AND
+                    first_seen_timestamp >= {reset_time})
+                GROUP BY pokemon_id
+                ORDER BY count desc
+                LIMIT 1"""
+                all_mons = """SELECT pokemon_id, lat, lon
+                FROM {pokemon}
+                WHERE (
+                    pokemon_id IN {nest_mons}
+                    AND
+                    ST_CONTAINS(ST_GEOMFROMTEXT('POLYGON({area})'), point(lat, lon))
+                    AND
+                    first_seen_timestamp >= {reset_time}
+                )
+                """
 
         elif config.scanner == "mad":
             pokestop_select = """SELECT pokestop_id, latitude, longitude
