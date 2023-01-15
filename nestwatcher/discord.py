@@ -24,7 +24,7 @@ async def get_emotes(bot, nesting_mons, config):
             if emoji.name not in emote_names:
                 log.info(f"Found emoji {emoji.name} not being used anymore - deleting")
                 await emoji.delete()
-    
+
     # emote creation
     final_emotes = {}
     for monid in nesting_mons:
@@ -41,7 +41,7 @@ async def get_emotes(bot, nesting_mons, config):
 
         if not free_guild:
             try:
-                free_guild = await bot.create_guild("Nest Emotes")
+                free_guild = await bot.create_guild(name="Nest Emotes")
                 channel = await free_guild.create_text_channel("hello")
                 invite = await channel.create_invite()
                 log.info(f"Created new emote server. Invite code: {invite.code}") 
@@ -57,5 +57,5 @@ async def get_emotes(bot, nesting_mons, config):
         log.info(f"Created emoji {emote_name}")
 
         final_emotes[int(monid)] = emoji.id
-    
+
     return final_emotes
