@@ -6,7 +6,7 @@ import requests
 
 from rich.progress import Progress
 from shapely import geometry
-from shapely.ops import polylabel, cascaded_union
+from shapely.ops import polylabel, unary_union
 from shapely.errors import TopologicalError
 from geojson import Feature
 from collections import defaultdict
@@ -114,7 +114,7 @@ def analyze_nests(config, area, nest_mons, queries, reset_time, nodelete):
                         small_park_i = i
 
                 parks[big_park_i].connect.append(connect_id)
-                parks[big_park_i].polygon = cascaded_union([big_park.polygon, small_park.polygon])
+                parks[big_park_i].polygon = unary_union([big_park.polygon, small_park.polygon])
                 parks.pop(small_park_i)
 
         # NOW CHECK ALL AREAS ONE AFTER ANOTHER
