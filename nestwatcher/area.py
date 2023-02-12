@@ -129,7 +129,7 @@ class Area():
         # statimap gen
         #polygons = []
         markers = []
-        static_map = "https://raw.githubusercontent.com/KartulUdus/PoracleJS/420100767469bd352df018ce0001d8fda5cfe322/fallback/staticMap.png"
+        static_map = ""
         if len(config.static_url) > 0:
             maxlat = max([n.max_lat for n in self.nests])
             minlat = min([n.min_lat for n in self.nests])
