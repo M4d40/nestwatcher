@@ -2,7 +2,6 @@ requests
 shapely
 pymysql
 geojson
-discord
 discord.py
 rich
 coloredlogs
