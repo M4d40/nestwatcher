@@ -142,7 +142,10 @@ if wanted == "1":
                         print(f"Error while generating Static Map:\n\n{static_map_data}\n{result.text}\n")
                         static_map_data["polygons"] = []
                         result = requests.post(config.static_url + "staticmap?pregenerate=true", json=static_map_data)
-                    static_map = config.static_url + f"staticmap/pregenerated/{result.text}"
+                    if "http" in result.text:
+                        static_map = result.text
+                    else:
+                        static_map = config.static_url + f"staticmap/pregenerated/{result.text}"
                     requests.get(static_map)
                 else:
                     static_map = ""
