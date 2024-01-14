@@ -247,7 +247,7 @@ if len(discord_webhook_data) > 0:
 
         emote_refs = None
         if config.discord_token:
-            bot = discord.Client()
+            bot = discord.Client(intents=intents, activity=activity, status=discord.Status.online)
             @bot.event
             async def on_ready():
                 bot.emote_refs = await get_emotes(bot, nesting_mons, config)
