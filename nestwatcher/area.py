@@ -144,7 +144,7 @@ class Area():
             )
             def add_to_points(points, monid, lat, lon):
                 points.append([
-                    str(monid).zfill(3),
+                    str(monid),
                     round(lat, 6),
                     round(lon, 6)
                 ])

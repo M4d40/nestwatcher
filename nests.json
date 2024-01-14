@@ -11,7 +11,7 @@
         #if(nestjson != nil):
         #for(nest in nestjson):
         {
-            "url": "https://raw.githubusercontent.com/whitewillem/PogoAssets/resized/icons_large/pokemon_icon_#index(nest, 0)_00.png",
+            "url": "https://raw.githubusercontent.com/whitewillem/PogoAssets/main/uicons-outline/pokemon/#index(nest, 0).png",
             "latitude": #index(nest, 1),
             "longitude": #index(nest, 2),
             "width": 30,
