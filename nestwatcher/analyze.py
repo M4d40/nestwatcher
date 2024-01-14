@@ -6,7 +6,7 @@ import requests
 
 from rich.progress import Progress
 from shapely import geometry
-from shapely.ops import polylabel, cascaded_union
+from shapely.ops import polylabel, unary_union
 from shapely.errors import TopologicalError
 from geojson import Feature
 from collections import defaultdict
@@ -21,7 +21,7 @@ def osm_date():
 def analyze_nests(config, area, nest_mons, queries, reset_time, nodelete):
     OSM_DATE = osm_date()
     # Getting OSM/overpass data
-    
+
     osm_file_name = f"data/osm_data/{area.name} {OSM_DATE.replace(':', '')}.json"
     try:
         with open(osm_file_name, mode="r", encoding="utf-8") as osm_file:
@@ -49,7 +49,7 @@ def analyze_nests(config, area, nest_mons, queries, reset_time, nodelete):
             db_data = json.load(db_file)
     except FileNotFoundError:
         db_data = {}"""
-    
+
     if not nodelete:
         queries.nest_delete(area.sql_fence, str(reset_time))
 
@@ -93,7 +93,7 @@ def analyze_nests(config, area, nest_mons, queries, reset_time, nodelete):
         all_spawns = [(str(_id), geometry.Point(lon, lat)) for _id, lat, lon in queries.spawns(area.sql_fence)]
         all_mons = queries.all_mons(str(tuple(nest_mons)), str(reset_time), area.sql_fence)
         all_mons = [(_id, geometry.Point(lon, lat)) for _id, lat, lon in all_mons]
-    
+
     with Progress() as progress:
         #check_rels_task = progress.add_task("Generating Polygons", total=len(parks))
         for park in relations:
@@ -114,7 +114,7 @@ def analyze_nests(config, area, nest_mons, queries, reset_time, nodelete):
                         small_park_i = i
 
                 parks[big_park_i].connect.append(connect_id)
-                parks[big_park_i].polygon = cascaded_union([big_park.polygon, small_park.polygon])
+                parks[big_park_i].polygon = unary_union([big_park.polygon, small_park.polygon])
                 parks.pop(small_park_i)
 
         # NOW CHECK ALL AREAS ONE AFTER ANOTHER

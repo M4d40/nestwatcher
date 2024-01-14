@@ -38,7 +38,10 @@ if wanted == "1":
     areaname = input("Area: ")
     print("Starting the bot now. Please write 'start' and follow your bot's instructions.")
 
-    bot = discord.Client()
+    activity = discord.Activity(type=discord.ActivityType.watching, name="Nests Updating...")
+    intents = discord.Intents.default()
+    intents.message_content = True
+    bot = discord.Client(intents=intents, activity=activity, status=discord.Status.online)
     @bot.event
     async def on_message(message):
         if not message.content == "start":
@@ -369,13 +372,15 @@ elif wanted == "4":
     if confirm == "n":
         sys.exit()
 
-    bot = discord.Client()
+    activity = discord.Activity(type=discord.ActivityType.watching, name="Nests Updating...")
+    intents = discord.Intents.default()
+    intents.message_content = True
+    bot = discord.Client(intents=intents, activity=activity, status=discord.Status.online)
     @bot.event
     async def on_ready():
         for guild in bot.guilds:
             if guild.name == "Nest Emotes":
                 await guild.delete()
-        await bot.logout()
 
     bot.run(config.discord_token)
 
